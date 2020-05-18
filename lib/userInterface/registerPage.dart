@@ -1,0 +1,207 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:progress_dialog/progress_dialog.dart';
+import 'package:quiz_match/userInterface/loginPage.dart';
+import 'package:quiz_match/userInterface/gameSelectionPage.dart';
+
+class RegisterPage extends StatefulWidget {
+  @override
+  _RegisterPageState createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final GlobalKey<FormState> _registerFormKey = GlobalKey<FormState>();
+  final TextEditingController _username = TextEditingController();
+  final TextEditingController _email = TextEditingController();
+  final TextEditingController _password = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  ProgressDialog _progressDialog;
+
+  @override
+  void initState() {
+    super.initState();
+    _progressDialog = ProgressDialog(context);
+    _progressDialog.style(message: 'Registrierung...');
+  }
+
+  @override
+  void dispose() {
+    _username.dispose();
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Quiz Match',
+          style: TextStyle(letterSpacing: 1.4),
+        ),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Card(
+          elevation: 8.0,
+          margin: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Form(
+            key: _registerFormKey,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  registerText(),
+                  usernameField(),
+                  emailField(),
+                  passwordField(),
+                  registerButton(),
+                  toLogin(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget registerText() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        'Registrierung',
+        style: TextStyle(fontSize: 24.0, letterSpacing: 1.4),
+      ),
+    );
+  }
+
+  Widget usernameField() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: TextFormField(
+        controller: _username,
+        maxLength: 30,
+        decoration: InputDecoration(
+          labelText: 'Benutzername...',
+          contentPadding: const EdgeInsets.all(0),
+          isDense: true,
+          prefixIcon: Icon(Icons.person, size: 22.0),
+          counterText: '',
+        ),
+      ),
+    );
+  }
+
+  Widget emailField() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: TextFormField(
+        controller: _email,
+        maxLength: 40,
+        decoration: InputDecoration(
+          labelText: 'E-Mail...',
+          contentPadding: const EdgeInsets.all(0),
+          isDense: true,
+          prefixIcon: Icon(Icons.email, size: 22.0),
+          counterText: '',
+        ),
+      ),
+    );
+  }
+
+  Widget passwordField() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: TextFormField(
+        controller: _password,
+        maxLength: 30,
+        obscureText: true,
+        decoration: InputDecoration(
+          labelText: 'Passwort...',
+          contentPadding: const EdgeInsets.all(0),
+          isDense: true,
+          prefixIcon: Icon(Icons.lock, size: 22.0),
+          counterText: '',
+        ),
+      ),
+    );
+  }
+
+  Widget registerButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 18.0),
+      child: RaisedButton(
+        onPressed: () => registerUser(context),
+        child: Text(
+          'Registrieren',
+          style: TextStyle(fontSize: 18.0, letterSpacing: 1.0),
+        ),
+      ),
+    );
+  }
+
+  Widget toLogin() {
+    return GestureDetector(
+      onTap: () => setState(() {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+      }),
+      child: Text(
+        'Zum Login',
+        style: TextStyle(fontSize: 16.0, letterSpacing: 1.0),
+      ),
+    );
+  }
+
+  registerUser(BuildContext context) async {
+    String errorMessage;
+    bool registerSuccessful = false;
+    if (_registerFormKey.currentState.validate()) {
+      _progressDialog.show();
+      try {
+        final FirebaseUser user = (await _auth.createUserWithEmailAndPassword(email: _email.text.toString(), password: _password.text.toString())).user;
+        createUserInCloudFirestore(user);
+        registerSuccessful = true;
+      } catch (error) {
+        switch (error.code) {
+          case 'ERROR_EMAIL_ALREADY_IN_USE':
+            errorMessage = 'E-Mail ist bereits registriert.';
+            break;
+          default:
+            errorMessage = 'Unbekannter Fehler ist aufgetreten. Bitte versuche es erneut.';
+        }
+        Scaffold.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+      }
+      _progressDialog.hide();
+      if (registerSuccessful) {
+        setState(() {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => GameSelectionPage()));
+        });
+      }
+    }
+  }
+
+  createUserInCloudFirestore(FirebaseUser user) async {
+    try {
+      final userData = await Firestore.instance.collection('users').document(user.uid).get();
+      if (userData == null || !userData.exists) {
+        Firestore.instance.collection('users').document(user.uid).setData({
+          'email': _email.text.toString(),
+          'username': _username.text.toString(),
+          'coins': 0,
+          'classicHighscoreSP': 0,
+        });
+      }
+    } catch (error) {
+      print('Create User in Cloud Firestore Error: ' + error.toString());
+      Scaffold.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Benutzer Registrierung fehlgeschlagen. Bitte versuche es erneut.'),
+        ),
+      );
+    }
+  }
+}
