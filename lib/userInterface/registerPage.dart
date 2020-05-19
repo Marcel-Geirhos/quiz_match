@@ -188,7 +188,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (email.isEmpty) {
       return 'Bitte E-Mail eingeben.';
     } else if (EmailValidator.validate(email.trim()) == false) {
-      return 'E-Mail ist nicht richtig formatiert.';
+      return 'E-Mail Format ist nicht korrekt.';
     } else {
       return null;
     }
