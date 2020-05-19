@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:progress_dialog/progress_dialog.dart';
+import 'package:email_validator/email_validator.dart';
 import 'package:quiz_match/userInterface/loginPage.dart';
 import 'package:quiz_match/userInterface/gameSelectionPage.dart';
 
@@ -17,10 +18,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _password = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   ProgressDialog _progressDialog;
+  bool _obscurePassword;
 
   @override
   void initState() {
     super.initState();
+    _obscurePassword = true;
     _progressDialog = ProgressDialog(context);
     _progressDialog.style(message: 'Registrierung...');
   }
@@ -85,6 +88,7 @@ class _RegisterPageState extends State<RegisterPage> {
       child: TextFormField(
         controller: _username,
         maxLength: 30,
+        validator: validateUsername,
         decoration: InputDecoration(
           labelText: 'Benutzername...',
           contentPadding: const EdgeInsets.all(0),
@@ -102,6 +106,8 @@ class _RegisterPageState extends State<RegisterPage> {
       child: TextFormField(
         controller: _email,
         maxLength: 40,
+        validator: validateEmail,
+        keyboardType: TextInputType.emailAddress,
         decoration: InputDecoration(
           labelText: 'E-Mail...',
           contentPadding: const EdgeInsets.all(0),
@@ -119,12 +125,19 @@ class _RegisterPageState extends State<RegisterPage> {
       child: TextFormField(
         controller: _password,
         maxLength: 30,
-        obscureText: true,
+        obscureText: _obscurePassword,
+        validator: validatePassword,
         decoration: InputDecoration(
           labelText: 'Passwort...',
           contentPadding: const EdgeInsets.all(0),
           isDense: true,
           prefixIcon: Icon(Icons.lock, size: 22.0),
+          suffixIcon: IconButton(
+            icon: Icon(!_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 22.0),
+            onPressed: () => setState(() {
+              _obscurePassword = !_obscurePassword;
+            })
+          ),
           counterText: '',
         ),
       ),
@@ -134,12 +147,16 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget registerButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 18.0),
-      child: RaisedButton(
-        onPressed: () => registerUser(context),
-        child: Text(
-          'Registrieren',
-          style: TextStyle(fontSize: 18.0, letterSpacing: 1.0),
-        ),
+      child: Builder(
+        builder: (BuildContext context) {
+          return RaisedButton(
+            onPressed: () => registerUser(context),
+            child: Text(
+              'Registrieren',
+              style: TextStyle(fontSize: 18.0, letterSpacing: 1.0),
+            ),
+          );
+        }
       ),
     );
   }
@@ -156,13 +173,45 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  String validateUsername(String username) {
+    int minLength = 3;
+    if (username.isEmpty) {
+      return 'Bitte Benutzername eingeben.';
+    } else if (username.length < minLength) {
+      return 'Mindestens $minLength Zeichen benötigt.';
+    } else {
+      return null;
+    }
+  }
+
+  String validateEmail(String email) {
+    if (email.isEmpty) {
+      return 'Bitte E-Mail eingeben.';
+    } else if (EmailValidator.validate(email.trim()) == false) {
+      return 'E-Mail ist nicht richtig formatiert.';
+    } else {
+      return null;
+    }
+  }
+
+  String validatePassword(String password) {
+    int minLength = 6;
+    if (password.isEmpty) {
+      return 'Bitte Passwort eingeben.';
+    } else if (password.length < minLength) {
+      return 'Mindestens $minLength Zeichen benötigt.';
+    } else {
+      return null;
+    }
+  }
+
   registerUser(BuildContext context) async {
     String errorMessage;
     bool registerSuccessful = false;
     if (_registerFormKey.currentState.validate()) {
       _progressDialog.show();
       try {
-        final FirebaseUser user = (await _auth.createUserWithEmailAndPassword(email: _email.text.toString(), password: _password.text.toString())).user;
+        final FirebaseUser user = (await _auth.createUserWithEmailAndPassword(email: _email.text.toString().trim(), password: _password.text.toString().trim())).user;
         createUserInCloudFirestore(user);
         registerSuccessful = true;
       } catch (error) {
@@ -189,8 +238,8 @@ class _RegisterPageState extends State<RegisterPage> {
       final userData = await Firestore.instance.collection('users').document(user.uid).get();
       if (userData == null || !userData.exists) {
         Firestore.instance.collection('users').document(user.uid).setData({
-          'email': _email.text.toString(),
-          'username': _username.text.toString(),
+          'email': _email.text.toString().trim(),
+          'username': _username.text.toString().trim(),
           'coins': 0,
           'classicHighscoreSP': 0,
         });
