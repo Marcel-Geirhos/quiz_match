@@ -45,6 +45,7 @@ class _RegisterPageState extends State<RegisterPage> {
           style: TextStyle(letterSpacing: 1.4),
         ),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: Card(
@@ -164,7 +165,9 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget toLogin() {
     return GestureDetector(
       onTap: () => setState(() {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+        Navigator.pushAndRemoveUntil(context,
+            MaterialPageRoute(builder: (BuildContext context) => LoginPage()),
+            ModalRoute.withName('/'));
       }),
       child: Text(
         'Zum Login',
@@ -227,7 +230,9 @@ class _RegisterPageState extends State<RegisterPage> {
       _progressDialog.hide();
       if (registerSuccessful) {
         setState(() {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => GameSelectionPage()));
+          Navigator.pushAndRemoveUntil(context,
+              MaterialPageRoute(builder: (BuildContext context) => GameSelectionPage()),
+              ModalRoute.withName('/'));
         });
       }
     }

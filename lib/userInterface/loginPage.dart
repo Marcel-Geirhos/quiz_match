@@ -42,6 +42,7 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(letterSpacing: 1.4),
         ),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: Card(
@@ -142,7 +143,9 @@ class _LoginPageState extends State<LoginPage> {
   Widget toRegister() {
     return GestureDetector(
       onTap: () => setState(() {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterPage()));
+        Navigator.pushAndRemoveUntil(context,
+            MaterialPageRoute(builder: (BuildContext context) => RegisterPage()),
+            ModalRoute.withName('/'));
       }),
       child: Text(
         'Zur Registrierung',
@@ -205,7 +208,9 @@ class _LoginPageState extends State<LoginPage> {
       _progressDialog.hide();
       if (loginSuccessful) {
         setState(() {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => GameSelectionPage()));
+          Navigator.pushAndRemoveUntil(context,
+              MaterialPageRoute(builder: (BuildContext context) => GameSelectionPage()),
+              ModalRoute.withName('/'));
         });
       }
     }
