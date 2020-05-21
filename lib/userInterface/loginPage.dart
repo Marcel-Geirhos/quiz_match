@@ -4,6 +4,7 @@ import 'package:progress_dialog/progress_dialog.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:quiz_match/userInterface/registerPage.dart';
 import 'package:quiz_match/userInterface/gameSelectionPage.dart';
+import 'package:quiz_match/userInterface/resetPasswordPage.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -59,6 +60,7 @@ class _LoginPageState extends State<LoginPage> {
                   emailField(),
                   passwordField(),
                   loginButton(),
+                  forgotPassword(),
                   toRegister(),
                 ],
               ),
@@ -147,8 +149,25 @@ class _LoginPageState extends State<LoginPage> {
             MaterialPageRoute(builder: (BuildContext context) => RegisterPage()),
             ModalRoute.withName('/'));
       }),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 20.0),
+        child: Text(
+          'Zur Registrierung',
+          style: TextStyle(fontSize: 16.0, letterSpacing: 1.0),
+        ),
+      ),
+    );
+  }
+
+  Widget forgotPassword() {
+    return GestureDetector(
+      onTap: () => setState(() {
+        Navigator.pushAndRemoveUntil(context,
+            MaterialPageRoute(builder: (BuildContext context) => ResetPasswordPage()),
+            ModalRoute.withName('/'));
+      }),
       child: Text(
-        'Zur Registrierung',
+        'Passwort vergessen?',
         style: TextStyle(fontSize: 16.0, letterSpacing: 1.0),
       ),
     );
