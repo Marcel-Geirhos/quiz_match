@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:progress_dialog/progress_dialog.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:quiz_match/utils/systemSettings.dart';
 import 'package:quiz_match/userInterface/registerPage.dart';
 import 'package:quiz_match/userInterface/gameSelectionPage.dart';
 import 'package:quiz_match/userInterface/resetPasswordPage.dart';
@@ -22,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    SystemSettings.allowOnlyPortraitOrientation();
     _obscurePassword = true;
     _progressDialog = ProgressDialog(context);
     _progressDialog.style(message: 'Login...');

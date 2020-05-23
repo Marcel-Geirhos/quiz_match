@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
+import 'package:quiz_match/utils/systemSettings.dart';
 import 'package:quiz_match/userInterface/gamePage.dart';
 import 'package:quiz_match/userInterface/loginPage.dart';
 
@@ -11,6 +12,12 @@ class GameSelectionPage extends StatefulWidget {
 
 class _GameSelectionPageState extends State<GameSelectionPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    SystemSettings.allowOnlyPortraitOrientation();
+  }
 
   @override
   Widget build(BuildContext context) {

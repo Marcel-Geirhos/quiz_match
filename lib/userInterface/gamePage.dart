@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:quiz_match/utils/systemSettings.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class GamePage extends StatefulWidget {
@@ -22,6 +23,7 @@ class _GamePageState extends State<GamePage> {
   @override
   void initState() {
     super.initState();
+    SystemSettings.allowOnlyPortraitOrientation();
     startNewRound();
   }
 

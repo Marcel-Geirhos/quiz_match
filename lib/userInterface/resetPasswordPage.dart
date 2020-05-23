@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:quiz_match/utils/systemSettings.dart';
 import 'package:progress_dialog/progress_dialog.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:quiz_match/userInterface/loginPage.dart';
@@ -18,6 +19,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   @override
   void initState() {
     super.initState();
+    SystemSettings.allowOnlyPortraitOrientation();
     _progressDialog = ProgressDialog(context);
     _progressDialog.style(message: 'E-Mail wird gesendet...');
   }

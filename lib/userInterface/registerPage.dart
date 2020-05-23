@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:quiz_match/utils/systemSettings.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:progress_dialog/progress_dialog.dart';
 import 'package:email_validator/email_validator.dart';
@@ -23,6 +24,14 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void initState() {
     super.initState();
+    SystemSettings.allowOnlyPortraitOrientation();
+    // automatischer Login
+    getUser().then((user) {
+      if (user != null) {
+        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (BuildContext context) => GameSelectionPage()),
+            ModalRoute.withName('/'));
+      }
+    });
     _obscurePassword = true;
     _progressDialog = ProgressDialog(context);
     _progressDialog.style(message: 'Registrierung...');
@@ -134,11 +143,10 @@ class _RegisterPageState extends State<RegisterPage> {
           isDense: true,
           prefixIcon: Icon(Icons.lock, size: 22.0),
           suffixIcon: IconButton(
-            icon: Icon(!_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 22.0),
-            onPressed: () => setState(() {
-              _obscurePassword = !_obscurePassword;
-            })
-          ),
+              icon: Icon(!_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 22.0),
+              onPressed: () => setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  })),
           counterText: '',
         ),
       ),
@@ -148,26 +156,23 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget registerButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 18.0),
-      child: Builder(
-        builder: (BuildContext context) {
-          return RaisedButton(
-            onPressed: () => registerUser(context),
-            child: Text(
-              'Registrieren',
-              style: TextStyle(fontSize: 18.0, letterSpacing: 1.0),
-            ),
-          );
-        }
-      ),
+      child: Builder(builder: (BuildContext context) {
+        return RaisedButton(
+          onPressed: () => registerUser(context),
+          child: Text(
+            'Registrieren',
+            style: TextStyle(fontSize: 18.0, letterSpacing: 1.0),
+          ),
+        );
+      }),
     );
   }
 
   Widget toLogin() {
     return GestureDetector(
       onTap: () => setState(() {
-        Navigator.pushAndRemoveUntil(context,
-            MaterialPageRoute(builder: (BuildContext context) => LoginPage()),
-            ModalRoute.withName('/'));
+        Navigator.pushAndRemoveUntil(
+            context, MaterialPageRoute(builder: (BuildContext context) => LoginPage()), ModalRoute.withName('/'));
       }),
       child: Text(
         'Zum Login',
@@ -214,7 +219,9 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_registerFormKey.currentState.validate()) {
       _progressDialog.show();
       try {
-        final FirebaseUser user = (await _auth.createUserWithEmailAndPassword(email: _email.text.toString().trim(), password: _password.text.toString().trim())).user;
+        final FirebaseUser user = (await _auth.createUserWithEmailAndPassword(
+                email: _email.text.toString().trim(), password: _password.text.toString().trim()))
+            .user;
         createUserInCloudFirestore(user);
         registerSuccessful = true;
       } catch (error) {
@@ -231,8 +238,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (registerSuccessful) {
         setState(() {
           Navigator.pushAndRemoveUntil(context,
-              MaterialPageRoute(builder: (BuildContext context) => GameSelectionPage()),
-              ModalRoute.withName('/'));
+              MaterialPageRoute(builder: (BuildContext context) => GameSelectionPage()), ModalRoute.withName('/'));
         });
       }
     }
@@ -257,5 +263,9 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       );
     }
+  }
+
+  Future<FirebaseUser> getUser() async {
+    return await _auth.currentUser();
   }
 }
