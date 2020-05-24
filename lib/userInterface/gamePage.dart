@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:quiz_match/utils/systemSettings.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -13,12 +14,13 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage> {
   List<String> _answerList;
   List<String> _resultList;
-  List<double> _answerOpacity;
-  int _selectedIndex = 0;
-  var _question;
-  Timer _timer;
+  List<bool> _answerOpacity;
+  int _selectedIndex;
+  int _answerCounter;
   int _startTime;
-  Future loadQuestion;
+  Timer _timer;
+  Future _loadQuestion;
+  var _question;
 
   @override
   void initState() {
@@ -36,83 +38,119 @@ class _GamePageState extends State<GamePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Text(
-          'Quiz Match',
-          style: TextStyle(letterSpacing: 1.4),
-        ),
-        centerTitle: true,
-      ),
       body: FutureBuilder(
-          future: loadQuestion,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              return Column(
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16.0),
-                    child: Text(
-                      '$_startTime',
-                      style: TextStyle(fontSize: 24.0, letterSpacing: 1.8),
-                    ),
+        future: _loadQuestion,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            _answerCounter = 0;
+            return Column(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(top: 44.0),
+                  child: Text(
+                    '$_startTime',
+                    style: TextStyle(fontSize: 24.0, letterSpacing: 1.8),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
-                    child: Text(
-                      _question['questionText'],
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 20.0),
-                    ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+                  child: Text(
+                    _question['questionText'],
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 20.0),
                   ),
-                  Column(
-                    children: List.generate(_question['answers'].length, (index) {
-                      return Opacity(
-                        opacity: _answerOpacity[index],
-                        child: ChoiceChip(
-                          label: Text(_answerList[index]),
-                          selected: _selectedIndex == index,
-                          onSelected: (selected) {
-                            if (selected) {
-                              setState(() {
-                                _selectedIndex = index;
-                              });
+                ),
+                Column(
+                  children: List.generate(
+                    _answerList.length.round(),
+                    (index) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: List.generate(
+                          2,
+                          (index2) {
+                            _answerCounter++;
+                            if (_answerList.length >= _answerCounter) {
+                              return Visibility(
+                                visible: _answerOpacity[_answerCounter - 1],
+                                maintainSize: true,
+                                maintainAnimation: true,
+                                maintainState: true,
+                                child: ChoiceChip(
+                                  label: Container(
+                                    width: 100,
+                                    child: AutoSizeText(
+                                      _answerList[_answerCounter - 1],
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                    ),
+                                  ),
+                                  selected: _selectedIndex == index * 2 + index2,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      _selectedIndex = index * 2 + index2;
+                                    });
+                                  },
+                                  selectedColor: Color(0xffffc107),
+                                ),
+                              );
+                            } else {
+                              return Text('');
                             }
                           },
-                          selectedColor: Color(0xffffc107),
                         ),
                       );
-                    }),
+                    },
                   ),
-                  Divider(color: Colors.white),
-                  Text(_question['topText']),
-                  Column(
-                    children: List.generate(_question['answers'].length, (index) {
-                      return GestureDetector(
-                        onTap: () => setSelectedText(_selectedIndex, index),
-                        child: ChoiceChip(
-                          label: Text(_resultList[index]?.toString() ?? ''),
-                          selected: false,
+                ),
+                Container(
+                  height: MediaQuery.of(context).size.height / 2,
+                  child: Column(
+                    children: <Widget>[
+                      Divider(color: Colors.white),
+                      Text(_question['topText']),
+                      Column(
+                        children: List.generate(
+                          _question['answers'].length,
+                          (index) {
+                            return GestureDetector(
+                              onTap: () => setSelectedText(_selectedIndex, index),
+                              child: ChoiceChip(
+                                label: Container(
+                                  width: 150,
+                                  child: AutoSizeText(
+                                    _resultList[index]?.toString() ?? '',
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                  ),
+                                ),
+                                selected: false,
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    }),
+                      ),
+                      Text(_question['bottomText']),
+                    ],
                   ),
-                  Text(_question['bottomText']),
-                ],
-              );
-            } else if (snapshot.connectionState == ConnectionState.waiting) {
-              return CircularProgressIndicator();
-            }
-            return CircularProgressIndicator();
-          }),
+                ),
+              ],
+            );
+          } else if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          return Center(child: CircularProgressIndicator());
+        },
+      ),
     );
   }
 
-  void setSelectedText(int selectedIndex, int index) {
+  void setSelectedText(int answerIndex, int resultIndex) {
     setState(() {
-      _resultList[index] = _answerList[selectedIndex];
-      _answerOpacity[index] = 0.0;
-      _selectedIndex = 0;
+      _resultList[resultIndex] = _answerList[answerIndex];
+      _answerOpacity[answerIndex] = false;
+      _selectedIndex = null;
     });
   }
 
@@ -140,15 +178,18 @@ class _GamePageState extends State<GamePage> {
     _question = questionList.documents[randomNumber];
     _answerList = _question.data['answers'].keys.toList();
     _resultList = new List(_answerList.length);
-    _startTime = 5 * _answerList.length;
+    // TODO _startTime = 5 * _answerList.length;
     _answerOpacity = new List(_answerList.length);
     for (int i = 0; i < _answerList.length; i++) {
-      _answerOpacity[i] = 1.0;
+      _answerOpacity[i] = true;
     }
   }
 
   void startNewRound() {
-    loadQuestion = loadQuestionData();
+    _startTime = 20;
+    _selectedIndex = 0;
+    _answerCounter = 0;
+    _loadQuestion = loadQuestionData();
     startTimer();
   }
 }
