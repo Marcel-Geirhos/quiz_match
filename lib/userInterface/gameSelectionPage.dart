@@ -47,11 +47,9 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
     if (index == 0) {
       return classicSPCard();
     } else if (index == 1) {
-      return Card(
-        elevation: 8.0,
-        margin: EdgeInsets.fromLTRB(10, 120, 10, 60),
-        child: Text('TODO'),
-      );
+      return questionSPCard();
+    } else if (index == 2) {
+      // TODO weitere Spielmodi implementieren.
     }
   }
 
@@ -77,6 +75,49 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             ),
             Padding(
               padding: const EdgeInsets.only(top: 16.0, bottom: 92.0),
+              child: Text(
+                'Bestes Ergebnis:\n42',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18.0),
+              ),
+            ),
+            Divider(color: Colors.white),
+            FlatButton(
+              onPressed: () => Navigator.pushAndRemoveUntil(
+                  context, MaterialPageRoute(builder: (BuildContext context) => GamePage()), ModalRoute.withName('/')),
+              child: Text(
+                'Spielen',
+                style: TextStyle(fontSize: 18.0, letterSpacing: 1.2),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget questionSPCard() {
+    return Card(
+      elevation: 8.0,
+      margin: EdgeInsets.fromLTRB(10, 120, 10, 70),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 12.0),
+        child: Column(
+          children: <Widget>[
+            Text(
+              '10 Fragen',
+              style: TextStyle(fontSize: 32.0, letterSpacing: 1.2),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 80.0),
+              child: Text(
+                'Spiele 10 Fragen und beantworte soviel wie möglich richtig und schlage den Highscore.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18.0),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0, bottom: 52.0),
               child: Text(
                 'Bestes Ergebnis:\n42',
                 textAlign: TextAlign.center,

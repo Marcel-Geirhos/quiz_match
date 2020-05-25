@@ -14,13 +14,17 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage> {
   List<String> _answerList;
   List<String> _resultList;
-  List<bool> _answerOpacity;
-  int _selectedIndex;
+  List<bool> _answerVisibility;
+  int _selectedAnswerIndex;
+  int _selectedResultIndex;
+  int _newResultIndex;
   int _answerCounter;
   int _startTime;
   Timer _timer;
   Future _loadQuestion;
   var _question;
+
+  bool test;
 
   @override
   void initState() {
@@ -60,81 +64,9 @@ class _GamePageState extends State<GamePage> {
                     style: TextStyle(fontSize: 20.0),
                   ),
                 ),
-                Column(
-                  children: List.generate(
-                    _answerList.length.round(),
-                    (index) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: List.generate(
-                          2,
-                          (index2) {
-                            _answerCounter++;
-                            if (_answerList.length >= _answerCounter) {
-                              return Visibility(
-                                visible: _answerOpacity[_answerCounter - 1],
-                                maintainSize: true,
-                                maintainAnimation: true,
-                                maintainState: true,
-                                child: ChoiceChip(
-                                  label: Container(
-                                    width: 100,
-                                    child: AutoSizeText(
-                                      _answerList[_answerCounter - 1],
-                                      textAlign: TextAlign.center,
-                                      maxLines: 2,
-                                    ),
-                                  ),
-                                  selected: _selectedIndex == index * 2 + index2,
-                                  onSelected: (selected) {
-                                    setState(() {
-                                      _selectedIndex = index * 2 + index2;
-                                    });
-                                  },
-                                  selectedColor: Color(0xffffc107),
-                                ),
-                              );
-                            } else {
-                              return Text('');
-                            }
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Container(
-                  height: MediaQuery.of(context).size.height / 2,
-                  child: Column(
-                    children: <Widget>[
-                      Divider(color: Colors.white),
-                      Text(_question['topText']),
-                      Column(
-                        children: List.generate(
-                          _question['answers'].length,
-                          (index) {
-                            return GestureDetector(
-                              onTap: () => setSelectedText(_selectedIndex, index),
-                              child: ChoiceChip(
-                                label: Container(
-                                  width: 150,
-                                  child: AutoSizeText(
-                                    _resultList[index]?.toString() ?? '',
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                  ),
-                                ),
-                                selected: false,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      Text(_question['bottomText']),
-                    ],
-                  ),
-                ),
+                answerArea(),
+                Divider(color: Colors.white),
+                resultArea(),
               ],
             );
           } else if (snapshot.connectionState == ConnectionState.waiting) {
@@ -146,11 +78,133 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  void setSelectedText(int answerIndex, int resultIndex) {
+  /// Auswählbarer Antwortenbereich (obere Bildschirmhälfte)
+  Widget answerArea() {
+    return Column(
+      children: List.generate(
+        _answerList.length.round(),
+            (index) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: List.generate(
+              2,
+                  (index2) {
+                _answerCounter++;
+                if (_answerList.length >= _answerCounter) {
+                  return Visibility(
+                    visible: _answerVisibility[_answerCounter - 1],
+                    maintainSize: true,
+                    maintainAnimation: true,
+                    maintainState: true,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                      child: ChoiceChip(
+                        label: Container(
+                          width: 100,
+                          child: AutoSizeText(
+                            _answerList[_answerCounter - 1],
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                          ),
+                        ),
+                        selected: _selectedAnswerIndex == index * 2 + index2,
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedAnswerIndex = index * 2 + index2;
+                          });
+                        },
+                        selectedColor: Color(0xffffc107),
+                      ),
+                    ),
+                  );
+                } else {
+                  return Text('');
+                }
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Unterer Ergebnisbereich (untere Bildschirmhälfte)
+  Widget resultArea() {
+    return Column(
+      children: <Widget>[
+        Text(_question['topText']),
+        Column(
+          children: List.generate(
+            _question['answers'].length,
+                (index) {
+              return GestureDetector(
+                onTap: () => setSelectedText(_selectedAnswerIndex, index),
+                child: ChoiceChip(
+                  label: Container(
+                    width: 150,
+                    child: AutoSizeText(
+                      _resultList[index]?.toString() ?? '',
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                    ),
+                  ),
+                  selected: _selectedResultIndex == index,
+                  /*onSelected: (selected) {
+                    setState(() {
+                      _selectedResultIndex = index;
+                    });
+                  },*/
+                  selectedColor: Colors.green,
+                ),
+              );
+            },
+          ),
+        ),
+        Text(_question['bottomText']),
+      ],
+    );
+  }
+
+  /*void setSelectedText(int answerIndex, int resultIndex) {
     setState(() {
       _resultList[resultIndex] = _answerList[answerIndex];
-      _answerOpacity[answerIndex] = false;
-      _selectedIndex = null;
+      _answerVisibility[answerIndex] = false;
+      _selectedAnswerIndex = null;
+    });
+  }*/
+
+  void setSelectedText(int answerIndex, int resultIndex) {
+    setState(() {
+      /// Antwort wird von oben ausgewählt und auf Ergebnisliste gesetzt.
+      if ((_resultList[resultIndex] == null || _resultList[resultIndex] == '') && test == false) {    // _selectedResultIndex == null
+        print(_resultList[resultIndex]);
+        _resultList[resultIndex] = _answerList[answerIndex];
+        _answerVisibility[answerIndex] = false;
+        _selectedAnswerIndex = null;
+      }
+      /// Schon gesetztes Ergebnis wird ausgewählt.
+      else if ((_resultList[resultIndex] != null && _resultList[resultIndex] != '') && resultIndex != null) {
+        _selectedResultIndex = resultIndex;
+        test = true;
+        print(_resultList[resultIndex]);
+        print(resultIndex);
+        //_resultList[resultIndex] = _resultList[resultIndex];
+      }
+      /// Schon gesetztes Ergebnis ist ausgewählt und wird auf anderes Ergebnisfeld verschoben.
+      else if ((_resultList[resultIndex] == null || _resultList[resultIndex] == '') && resultIndex != null) {
+        print('3');
+        _resultList[resultIndex] = _resultList[_selectedResultIndex];
+        _resultList[_selectedResultIndex] = '';
+        _selectedResultIndex = null;
+        print(_resultList[resultIndex]);
+        test = false;
+      } else {
+        print('4');
+        print(_resultList[resultIndex]);
+        print(resultIndex);
+         // TODO Wechsel von zwei Ergebnisantworten.
+      }
     });
   }
 
@@ -179,15 +233,16 @@ class _GamePageState extends State<GamePage> {
     _answerList = _question.data['answers'].keys.toList();
     _resultList = new List(_answerList.length);
     // TODO _startTime = 5 * _answerList.length;
-    _answerOpacity = new List(_answerList.length);
+    _answerVisibility = new List(_answerList.length);
     for (int i = 0; i < _answerList.length; i++) {
-      _answerOpacity[i] = true;
+      _answerVisibility[i] = true;
     }
   }
 
   void startNewRound() {
+    test = false;
     _startTime = 20;
-    _selectedIndex = 0;
+    _selectedAnswerIndex = 0;
     _answerCounter = 0;
     _loadQuestion = loadQuestionData();
     startTimer();
