@@ -177,19 +177,35 @@ class _GamePageState extends State<GamePage> {
   void setSelectedText(int answerIndex, int resultIndex) {
     setState(() {
       /// Antwort wird von oben ausgewählt und auf Ergebnisliste gesetzt.
-      if ((_resultList[resultIndex] == null || _resultList[resultIndex] == '') && test == false) {    // _selectedResultIndex == null
-        print(_resultList[resultIndex]);
+      if ((_resultList[resultIndex] == null || _resultList[resultIndex] == '') && test == false) {
+        print('1');
         _resultList[resultIndex] = _answerList[answerIndex];
         _answerVisibility[answerIndex] = false;
         _selectedAnswerIndex = null;
       }
       /// Schon gesetztes Ergebnis wird ausgewählt.
       else if ((_resultList[resultIndex] != null && _resultList[resultIndex] != '') && resultIndex != null) {
-        _selectedResultIndex = resultIndex;
         test = true;
         print(_resultList[resultIndex]);
-        print(resultIndex);
-        //_resultList[resultIndex] = _resultList[resultIndex];
+        if (_selectedResultIndex != null) {
+          print('2.2');
+          print(_resultList[resultIndex]);
+          print(_resultList[_selectedResultIndex]);
+          var temp =_resultList[resultIndex];
+          _resultList[resultIndex] = _resultList[_selectedResultIndex];
+          _resultList[_selectedResultIndex] = temp;
+          _selectedResultIndex = null;
+          test = false;
+        } else {
+          print('2.1');
+          _selectedResultIndex = resultIndex;
+          _newResultIndex = resultIndex;
+          print(_resultList[_selectedResultIndex]);
+          print(_resultList[resultIndex]);
+          var temp = _resultList[_newResultIndex];
+          _resultList[_newResultIndex] = _resultList[resultIndex];
+          _resultList[resultIndex] = temp;
+        }
       }
       /// Schon gesetztes Ergebnis ist ausgewählt und wird auf anderes Ergebnisfeld verschoben.
       else if ((_resultList[resultIndex] == null || _resultList[resultIndex] == '') && resultIndex != null) {
@@ -199,7 +215,7 @@ class _GamePageState extends State<GamePage> {
         _selectedResultIndex = null;
         print(_resultList[resultIndex]);
         test = false;
-      } else {
+      } else if ((_resultList[resultIndex] != null || _resultList[resultIndex] != '') && (_resultList[_selectedResultIndex] == null || _resultList[_selectedResultIndex] == '')) {
         print('4');
         print(_resultList[resultIndex]);
         print(resultIndex);
