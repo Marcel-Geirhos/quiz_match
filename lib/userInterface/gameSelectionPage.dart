@@ -4,6 +4,7 @@ import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:quiz_match/utils/systemSettings.dart';
 import 'package:quiz_match/userInterface/gamePage.dart';
 import 'package:quiz_match/userInterface/loginPage.dart';
+import 'package:quiz_match/userInterface/settingsPage.dart';
 
 class GameSelectionPage extends StatefulWidget {
   @override
@@ -21,24 +22,31 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.exit_to_app),
-            onPressed: () => signOut(),
+    return WillPopScope(
+      onWillPop: signOutDialog,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () => toSettings(),
           ),
-        ],
-      ),
-      body: Swiper(
-        itemCount: 2,
-        itemBuilder: (BuildContext context, int index) {
-          return gameCardList(index);
-        },
-        viewportFraction: 0.8,
-        scale: 0.9,
-        loop: false,
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.exit_to_app),
+              onPressed: () => signOutDialog(),
+            ),
+          ],
+        ),
+        body: Swiper(
+          itemCount: 2,
+          itemBuilder: (BuildContext context, int index) {
+            return gameCardList(index);
+          },
+          viewportFraction: 0.8,
+          scale: 0.9,
+          loop: false,
+        ),
       ),
     );
   }
@@ -137,6 +145,31 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
         ),
       ),
     );
+  }
+
+  Future<bool> signOutDialog() async {
+    return (await showDialog(
+          context: context,
+          builder: (context) => new AlertDialog(
+            title: Text('Ausloggen?'),
+            content: Text('Willst du dich wirklich ausloggen?'),
+            actions: <Widget>[
+              FlatButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text('Nein'),
+              ),
+              FlatButton(
+                onPressed: () => signOut(),
+                child: Text('Ja'),
+              ),
+            ],
+          ),
+        )) ??
+        false;
+  }
+
+  void toSettings() {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage()));
   }
 
   void signOut() async {

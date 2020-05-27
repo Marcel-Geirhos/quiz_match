@@ -155,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
         padding: const EdgeInsets.only(top: 20.0),
         child: Text(
           'Zur Registrierung',
-          style: TextStyle(fontSize: 16.0, letterSpacing: 1.0),
+          style: TextStyle(fontSize: 16.0, letterSpacing: 1.2),
         ),
       ),
     );
@@ -170,7 +170,7 @@ class _LoginPageState extends State<LoginPage> {
       }),
       child: Text(
         'Passwort vergessen?',
-        style: TextStyle(fontSize: 16.0, letterSpacing: 1.0),
+        style: TextStyle(fontSize: 16.0, letterSpacing: 1.2),
       ),
     );
   }

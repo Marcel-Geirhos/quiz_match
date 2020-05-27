@@ -12,19 +12,18 @@ class GamePage extends StatefulWidget {
 }
 
 class _GamePageState extends State<GamePage> {
-  List<String> _answerList;
+  List<String> _answerKeyList;
   List<String> _resultList;
   List<bool> _answerVisibility;
+  List<dynamic> _answerValueList;
   int _selectedAnswerIndex;
   int _selectedResultIndex;
-  int _newResultIndex;
   int _answerCounter;
-  int _startTime;
+  int _countdown;
   Timer _timer;
   Future _loadQuestion;
   var _question;
-
-  bool test;
+  Color _countdownColor;
 
   @override
   void initState() {
@@ -52,8 +51,8 @@ class _GamePageState extends State<GamePage> {
                 Padding(
                   padding: const EdgeInsets.only(top: 44.0),
                   child: Text(
-                    '$_startTime',
-                    style: TextStyle(fontSize: 24.0, letterSpacing: 1.8),
+                    '$_countdown',
+                    style: TextStyle(fontSize: 24.0, letterSpacing: 1.8, color: _countdownColor),
                   ),
                 ),
                 Padding(
@@ -82,16 +81,16 @@ class _GamePageState extends State<GamePage> {
   Widget answerArea() {
     return Column(
       children: List.generate(
-        _answerList.length.round(),
-            (index) {
+        _answerKeyList.length.round(),
+        (index) {
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: List.generate(
               2,
-                  (index2) {
+              (index2) {
                 _answerCounter++;
-                if (_answerList.length >= _answerCounter) {
+                if (_answerKeyList.length >= _answerCounter) {
                   return Visibility(
                     visible: _answerVisibility[_answerCounter - 1],
                     maintainSize: true,
@@ -103,7 +102,7 @@ class _GamePageState extends State<GamePage> {
                         label: Container(
                           width: 100,
                           child: AutoSizeText(
-                            _answerList[_answerCounter - 1],
+                            _answerKeyList[_answerCounter - 1],
                             textAlign: TextAlign.center,
                             maxLines: 2,
                           ),
@@ -112,6 +111,14 @@ class _GamePageState extends State<GamePage> {
                         onSelected: (selected) {
                           setState(() {
                             _selectedAnswerIndex = index * 2 + index2;
+                            // Ergebnisfeld wird mit Antwort ausgetauscht
+                            if (_selectedResultIndex != -1) {
+                              var temp = _resultList[_selectedResultIndex];
+                              _resultList[_selectedResultIndex] = _answerKeyList[_selectedAnswerIndex];
+                              _answerKeyList[_selectedAnswerIndex] = temp;
+                              _selectedResultIndex = -1;
+                              _selectedAnswerIndex = -1;
+                            }
                           });
                         },
                         selectedColor: Color(0xffffc107),
@@ -137,9 +144,9 @@ class _GamePageState extends State<GamePage> {
         Column(
           children: List.generate(
             _question['answers'].length,
-                (index) {
+            (index) {
               return GestureDetector(
-                onTap: () => setSelectedText(_selectedAnswerIndex, index),
+                onTap: () => setSelectedText(index),
                 child: ChoiceChip(
                   label: Container(
                     width: 150,
@@ -150,11 +157,6 @@ class _GamePageState extends State<GamePage> {
                     ),
                   ),
                   selected: _selectedResultIndex == index,
-                  /*onSelected: (selected) {
-                    setState(() {
-                      _selectedResultIndex = index;
-                    });
-                  },*/
                   selectedColor: Colors.green,
                 ),
               );
@@ -166,60 +168,43 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  /*void setSelectedText(int answerIndex, int resultIndex) {
+  void setSelectedText(int resultIndex) {
     setState(() {
-      _resultList[resultIndex] = _answerList[answerIndex];
-      _answerVisibility[answerIndex] = false;
-      _selectedAnswerIndex = null;
-    });
-  }*/
-
-  void setSelectedText(int answerIndex, int resultIndex) {
-    setState(() {
-      /// Antwort wird von oben ausgewählt und auf Ergebnisliste gesetzt.
-      if ((_resultList[resultIndex] == null || _resultList[resultIndex] == '') && test == false) {
-        print('1');
-        _resultList[resultIndex] = _answerList[answerIndex];
-        _answerVisibility[answerIndex] = false;
-        _selectedAnswerIndex = null;
-      }
-      /// Schon gesetztes Ergebnis wird ausgewählt.
-      else if ((_resultList[resultIndex] != null && _resultList[resultIndex] != '') && resultIndex != null) {
-        test = true;
-        print(_resultList[resultIndex]);
-        if (_selectedResultIndex != null) {
-          print('2.2');
-          print(_resultList[resultIndex]);
-          print(_resultList[_selectedResultIndex]);
-          var temp =_resultList[resultIndex];
-          _resultList[resultIndex] = _resultList[_selectedResultIndex];
-          _resultList[_selectedResultIndex] = temp;
-          _selectedResultIndex = null;
-          test = false;
-        } else {
-          print('2.1');
-          _selectedResultIndex = resultIndex;
-          _newResultIndex = resultIndex;
-          print(_resultList[_selectedResultIndex]);
-          print(_resultList[resultIndex]);
-          var temp = _resultList[_newResultIndex];
-          _resultList[_newResultIndex] = _resultList[resultIndex];
-          _resultList[resultIndex] = temp;
+      // Antwort ist ausgewählt
+      if (_selectedAnswerIndex != -1) {
+        // Ergebnisfeld ist leer
+        if (_resultList[resultIndex] == '') {
+          _resultList[resultIndex] = _answerKeyList[_selectedAnswerIndex];
+          _answerVisibility[_selectedAnswerIndex] = false;
+          _selectedAnswerIndex = -1;
+        }
+        // Ergebnisfeld ist nicht leer
+        else {
+          var temp = _resultList[resultIndex];
+          _resultList[resultIndex] = _answerKeyList[_selectedAnswerIndex];
+          _answerKeyList[_selectedAnswerIndex] = temp;
+          _selectedAnswerIndex = -1;
         }
       }
-      /// Schon gesetztes Ergebnis ist ausgewählt und wird auf anderes Ergebnisfeld verschoben.
-      else if ((_resultList[resultIndex] == null || _resultList[resultIndex] == '') && resultIndex != null) {
-        print('3');
-        _resultList[resultIndex] = _resultList[_selectedResultIndex];
-        _resultList[_selectedResultIndex] = '';
-        _selectedResultIndex = null;
-        print(_resultList[resultIndex]);
-        test = false;
-      } else if ((_resultList[resultIndex] != null || _resultList[resultIndex] != '') && (_resultList[_selectedResultIndex] == null || _resultList[_selectedResultIndex] == '')) {
-        print('4');
-        print(_resultList[resultIndex]);
-        print(resultIndex);
-         // TODO Wechsel von zwei Ergebnisantworten.
+      // Ergebnis ist ausgewählt
+      else {
+        if (_selectedResultIndex == -1) {
+          _selectedResultIndex = resultIndex;
+          return;
+        }
+        // Ergebnisfeld ist leer
+        if (_resultList[resultIndex] == '') {
+          _resultList[resultIndex] = _resultList[_selectedResultIndex];
+          _resultList[_selectedResultIndex] = '';
+          _selectedResultIndex = -1;
+        }
+        // Ergebnisfeld ist nicht leer
+        else {
+          var temp = _resultList[resultIndex];
+          _resultList[resultIndex] = _resultList[_selectedResultIndex];
+          _resultList[_selectedResultIndex] = temp;
+          _selectedResultIndex = -1;
+        }
       }
     });
   }
@@ -230,37 +215,55 @@ class _GamePageState extends State<GamePage> {
       oneSecond,
       (Timer timer) => setState(
         () {
-          if (_startTime < 1) {
+          if (_countdown < 1) {
             timer.cancel();
             startNewRound();
           } else {
-            _startTime--;
+            if (_countdown <= 6) {
+              _countdownColor = Colors.red;
+            } else {
+              _countdownColor = Colors.white;
+            }
+            _countdown--;
           }
         },
       ),
     );
   }
 
+  /*
+
+   */
   Future<void> loadQuestionData() async {
     QuerySnapshot questionList = await Firestore.instance.collection('questions').getDocuments();
     Random random = new Random();
     int randomNumber = random.nextInt(questionList.documents.length);
     _question = questionList.documents[randomNumber];
-    _answerList = _question.data['answers'].keys.toList();
-    _resultList = new List(_answerList.length);
-    // TODO _startTime = 5 * _answerList.length;
-    _answerVisibility = new List(_answerList.length);
-    for (int i = 0; i < _answerList.length; i++) {
+    _answerKeyList = _question.data['answers'].keys.toList();
+    _answerValueList = _question.data['answers'].values.toList();
+    var answers = new Map();
+    for (int i = 0; i < _answerKeyList.length; i++) {
+      answers[_answerKeyList[i]] = _answerValueList[i];
+    }
+    answers.entries.toList();
+    _answerKeyList.shuffle();
+    _countdown = 5 * _answerKeyList.length;
+    _resultList = new List(_answerKeyList.length);
+    for (int i = 0; i < _resultList.length; i++) {
+      _resultList[i] = '';
+    }
+    _answerVisibility = new List(_answerKeyList.length);
+    for (int i = 0; i < _answerKeyList.length; i++) {
       _answerVisibility[i] = true;
     }
+    startTimer();
   }
 
   void startNewRound() {
-    test = false;
-    _startTime = 20;
-    _selectedAnswerIndex = 0;
     _answerCounter = 0;
+    _selectedAnswerIndex = -1;
+    _selectedResultIndex = -1;
+    _countdownColor = Colors.white;
     _loadQuestion = loadQuestionData();
-    startTimer();
   }
 }
