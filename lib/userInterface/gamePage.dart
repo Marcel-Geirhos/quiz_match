@@ -3,9 +3,11 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:quiz_match/utils/systemSettings.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:quiz_match/userInterface/gameSelectionPage.dart';
 
 class GamePage extends StatefulWidget {
   @override
@@ -19,22 +21,28 @@ class _GamePageState extends State<GamePage> {
   List<bool> _answerVisibility;
   List<Icon> _icon;
   LinkedHashMap _solutionMap;
+  LinkedHashMap _solution;
   int _selectedAnswerIndex;
   int _selectedResultIndex;
   int _answerCounter;
+  int _pointsCounter;
+  int _roundCounter;
   int _countdown;
   Timer _timer;
   Future _loadQuestion;
   var _question;
-  Map _solution;
   Color _countdownColor;
   bool _showResults;
+  bool _isGameOver;
   String _nextStepButtonText;
 
   @override
   void initState() {
     super.initState();
     SystemSettings.allowOnlyPortraitOrientation();
+    _pointsCounter = 0;
+    _roundCounter = 0;
+    _isGameOver = false;
     startNewRound();
   }
 
@@ -54,12 +62,34 @@ class _GamePageState extends State<GamePage> {
             _answerCounter = 0;
             return Column(
               children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(top: 36.0),
-                  child: Text(
-                    '$_countdown',
-                    style: TextStyle(fontSize: 24.0, letterSpacing: 1.8, color: _countdownColor),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.max,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 36.0, left: 12.0),
+                      child: Text(
+                        'Runde\n$_roundCounter',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16.0),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 38.0),
+                      child: Text(
+                        '$_countdown',
+                        style: TextStyle(fontSize: 24.0, letterSpacing: 1.8, color: _countdownColor),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 36.0, right: 12.0),
+                      child: Text(
+                        'Punkte\n$_pointsCounter',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16.0),
+                      ),
+                    ),
+                  ],
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
@@ -87,7 +117,7 @@ class _GamePageState extends State<GamePage> {
   Widget answerArea() {
     return Column(
       children: List.generate(
-        _answerKeyList.length.round() - 3,    // TODO warum so? Warum - 3 ud round()?
+        _answerKeyList.length.round() - 2, // TODO warum so? Warum - 2 und round()?
         (index) {
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -145,7 +175,10 @@ class _GamePageState extends State<GamePage> {
   Widget resultArea() {
     return Column(
       children: <Widget>[
-        Text(_question['topText']),
+        Text(
+          _question['topText'],
+          style: TextStyle(fontSize: 20.0),
+        ),
         Column(
           children: List.generate(
             _question['answers'].length,
@@ -184,7 +217,10 @@ class _GamePageState extends State<GamePage> {
             },
           ),
         ),
-        Text(_question['bottomText']),
+        Text(
+          _question['bottomText'],
+          style: TextStyle(fontSize: 20.0),
+        ),
         Visibility(
           visible: _showResults,
           maintainSize: true,
@@ -248,6 +284,7 @@ class _GamePageState extends State<GamePage> {
         () {
           if (_countdown < 1) {
             timer.cancel();
+            _countdownColor = Colors.white;
             showRightAndWrongAnswers();
           } else {
             if (_countdown <= 6) {
@@ -262,6 +299,83 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
+  void showRightAndWrongAnswers() {
+    _showResults = true;
+    // Sortiert die Antwortenliste absteigend vom höchsten zum niedrigsten.
+    var sortedKeys = _solution.keys.toList(growable: false)..sort((k1, k2) => _solution[k2].compareTo(_solution[k1]));
+    _solutionMap = new LinkedHashMap.fromIterable(sortedKeys, key: (k) => k, value: (k) => _solution[k]);
+    _icon = new List(_resultList.length);
+    for (int i = 0; i < _resultList.length; i++) {
+      if (_resultList[i] == _solutionMap.keys.elementAt(i)) {
+        _icon[i] = Icon(Icons.done, color: Colors.green);
+        _pointsCounter++;
+      } else {
+        _icon[i] = Icon(Icons.close, color: Colors.red);
+        _isGameOver = true;
+      }
+    }
+  }
+
+  void nextStep() {
+    if (_nextStepButtonText == 'Ergebnisse anzeigen') {
+      showResults();
+    } else if (_nextStepButtonText == 'Nächste Frage') {
+      startNewRound();
+    } else {
+      // Game Over
+      showDialog(
+        context: context,
+        builder: (_) => gameOverDialog(),
+      );
+    }
+  }
+
+  Widget gameOverDialog() {
+    return AlertDialog(
+      title: Text(
+        'Game Over',
+        textAlign: TextAlign.center,
+      ),
+      content: Text('Erreichte Punktzahl: $_pointsCounter'),
+      actions: <Widget>[
+        FlatButton(
+          child: Text(
+            'Spiel beenden',
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () => Navigator.pushAndRemoveUntil(context,
+              MaterialPageRoute(builder: (BuildContext context) => GameSelectionPage()), ModalRoute.withName('/')),
+        ),
+      ],
+      elevation: 24.0,
+    );
+  }
+
+  void showResults() {
+    for (int i = 0; i < _resultList.length; i++) {
+      _resultList[i] = _solutionMap.keys.elementAt(i);
+    }
+    setState(() {
+      if (_isGameOver) {
+        _nextStepButtonText = 'Spiel beenden';
+        updateHighscore();
+      } else {
+        _nextStepButtonText = 'Nächste Frage';
+      }
+    });
+  }
+
+  void startNewRound() {
+    _roundCounter++;
+    _nextStepButtonText = 'Ergebnisse anzeigen';
+    _showResults = false;
+    _answerCounter = 0;
+    _selectedAnswerIndex = -1;
+    _selectedResultIndex = -1;
+    _countdownColor = Colors.white;
+    _loadQuestion = loadQuestionData();
+  }
+
   /*
    TODO Funktion kommentieren
    */
@@ -272,7 +386,7 @@ class _GamePageState extends State<GamePage> {
     _question = questionList.documents[randomNumber];
     _answerKeyList = _question.data['answers'].keys.toList();
     _answerValueList = _question.data['answers'].values.toList();
-    _solution = new Map();
+    _solution = new LinkedHashMap();
     for (int i = 0; i < _answerKeyList.length; i++) {
       _solution[_answerKeyList[i]] = _answerValueList[i];
     }
@@ -289,45 +403,23 @@ class _GamePageState extends State<GamePage> {
     startTimer();
   }
 
-  void showRightAndWrongAnswers() {
-    _showResults = true;
-    // Sortiert die Antwortenliste absteigend vom höchsten zum niedrigsten.
-    var sortedKeys = _solution.keys.toList(growable: false)..sort((k1, k2) => _solution[k2].compareTo(_solution[k1]));
-    _solutionMap = new LinkedHashMap.fromIterable(sortedKeys, key: (k) => k, value: (k) => _solution[k]);
-    _icon = new List(_resultList.length);
-    for (int i = 0; i < _resultList.length; i++) {
-      if (_resultList[i] == _solutionMap.keys.elementAt(i)) {
-        _icon[i] = Icon(Icons.done, color: Colors.green);
-      } else {
-        _icon[i] = Icon(Icons.close, color: Colors.red);
-      }
+  void updateHighscore() async {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    FirebaseUser user = await _auth.currentUser();
+    bool newHighscore = await checkNewHighscore(user);
+    if (newHighscore) {
+      Firestore.instance.collection('users').document(user.uid).updateData({
+        'classicHighscoreSP': _pointsCounter,
+      });
     }
   }
 
-  void nextStep() {
-    if (_nextStepButtonText == 'Ergebnisse anzeigen') {
-      showResults();
-    } else {
-      startNewRound();
+  Future<bool> checkNewHighscore(FirebaseUser user) async {
+    var userData = await Firestore.instance.collection('users').document(user.uid).get();
+    // Neuer Highscore
+    if (_pointsCounter > userData['classicHighscoreSP']) {
+      return true;
     }
-  }
-
-  void showResults() {
-    for (int i = 0; i < _resultList.length; i++) {
-      _resultList[i] = _solutionMap.keys.elementAt(i);
-    }
-    setState(() {
-      _nextStepButtonText = 'Nächste Frage';
-    });
-  }
-
-  void startNewRound() {
-    _nextStepButtonText = 'Ergebnisse anzeigen';
-    _showResults = false;
-    _answerCounter = 0;
-    _selectedAnswerIndex = -1;
-    _selectedResultIndex = -1;
-    _countdownColor = Colors.white;
-    _loadQuestion = loadQuestionData();
+    return false;
   }
 }
