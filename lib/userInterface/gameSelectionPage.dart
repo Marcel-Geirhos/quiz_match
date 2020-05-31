@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:quiz_match/utils/systemSettings.dart';
 import 'package:quiz_match/userInterface/gamePage.dart';
 import 'package:quiz_match/userInterface/loginPage.dart';
@@ -13,11 +14,14 @@ class GameSelectionPage extends StatefulWidget {
 
 class _GameSelectionPageState extends State<GameSelectionPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  Future _loadHighscores;
+  var _userHighscores;
 
   @override
   void initState() {
     super.initState();
     SystemSettings.allowOnlyPortraitOrientation();
+    _loadHighscores = loadHighscores();
   }
 
   @override
@@ -38,14 +42,24 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             ),
           ],
         ),
-        body: Swiper(
-          itemCount: 2,
-          itemBuilder: (BuildContext context, int index) {
-            return gameCardList(index);
+        body: FutureBuilder(
+          future: _loadHighscores,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              return Swiper(
+                itemCount: 2,
+                itemBuilder: (BuildContext context, int index) {
+                  return gameCardList(index);
+                },
+                viewportFraction: 0.8,
+                scale: 0.9,
+                loop: false,
+              );
+            } else if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
+            return Center(child: CircularProgressIndicator());
           },
-          viewportFraction: 0.8,
-          scale: 0.9,
-          loop: false,
         ),
       ),
     );
@@ -84,7 +98,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             Padding(
               padding: const EdgeInsets.only(top: 16.0, bottom: 92.0),
               child: Text(
-                'Bestes Ergebnis:\n42',
+                'Bestes Ergebnis:\n${_userHighscores['classicHighscoreSP']}',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),
@@ -127,7 +141,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             Padding(
               padding: const EdgeInsets.only(top: 16.0, bottom: 52.0),
               child: Text(
-                'Bestes Ergebnis:\n42',
+                'Bestes Ergebnis:\n${_userHighscores['questionHighscoreSP']}',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),
@@ -145,6 +159,11 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
         ),
       ),
     );
+  }
+
+  Future<void> loadHighscores() async {
+    FirebaseUser user = await _auth.currentUser();
+    _userHighscores = await Firestore.instance.collection('users').document(user.uid).get();
   }
 
   Future<bool> signOutDialog() async {
