@@ -27,6 +27,7 @@ class _GamePageState extends State<GamePage> {
   int _answerCounter;
   int _pointsCounter;
   int _roundCounter;
+  int _answerNumber;
   int _countdown;
   Timer _timer;
   Future _loadQuestion;
@@ -117,7 +118,7 @@ class _GamePageState extends State<GamePage> {
   Widget answerArea() {
     return Column(
       children: List.generate(
-        _answerKeyList.length.round() - 2, // TODO warum so? Warum - 2 und round()?
+        _answerNumber - 2,    // TODO warum so? Warum - 2?
         (index) {
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -125,7 +126,7 @@ class _GamePageState extends State<GamePage> {
               2,
               (index2) {
                 _answerCounter++;
-                if (_answerKeyList.length >= _answerCounter) {
+                if (_answerNumber >= _answerCounter) {
                   return Visibility(
                     visible: _answerVisibility[_answerCounter - 1],
                     maintainSize: true,
@@ -181,7 +182,7 @@ class _GamePageState extends State<GamePage> {
         ),
         Column(
           children: List.generate(
-            _question['answers'].length,
+            _answerNumber,
             (index) {
               return Row(
                 mainAxisAlignment: MainAxisAlignment.start,
@@ -382,25 +383,42 @@ class _GamePageState extends State<GamePage> {
   Future<void> loadQuestionData() async {
     QuerySnapshot questionList = await Firestore.instance.collection('questions').getDocuments();
     Random random = new Random();
-    int randomNumber = random.nextInt(questionList.documents.length);
-    _question = questionList.documents[randomNumber];
-    _answerKeyList = _question.data['answers'].keys.toList();
-    _answerValueList = _question.data['answers'].values.toList();
-    _solution = new LinkedHashMap();
-    for (int i = 0; i < _answerKeyList.length; i++) {
-      _solution[_answerKeyList[i]] = _answerValueList[i];
-    }
-    _answerKeyList.shuffle();
-    _countdown = 5 * _answerKeyList.length;
-    _resultList = new List(_answerKeyList.length);
-    for (int i = 0; i < _resultList.length; i++) {
+    int randomQuestion = random.nextInt(questionList.documents.length);
+    _question = questionList.documents[randomQuestion];
+    Random answerRandom = new Random();
+    _answerNumber = 4 + answerRandom.nextInt(6 - 4);   // 4 - 6 Antworten möglich
+    prepareQuestion(_answerNumber);
+    _countdown = 5 * _answerNumber;
+    _resultList = new List(_answerNumber);
+    for (int i = 0; i < _answerNumber; i++) {
       _resultList[i] = '';
+      print(_resultList[i]);
     }
-    _answerVisibility = new List(_answerKeyList.length);
-    for (int i = 0; i < _answerKeyList.length; i++) {
+    _answerVisibility = new List(_answerNumber);
+    print(_answerNumber);
+    for (int i = 0; i < _answerNumber; i++) {
       _answerVisibility[i] = true;
     }
     startTimer();
+  }
+
+  /*
+   TODO Funktion kommentieren
+   */
+  void prepareQuestion(int answerNumber) {
+    _answerKeyList = _question.data['answers'].keys.toList();
+    _answerValueList = _question.data['answers'].values.toList();
+    _solution = new LinkedHashMap();
+    _answerKeyList.shuffle();
+    _answerKeyList = _answerKeyList.sublist(0, answerNumber);
+    List<String> allAnswerKeys = _question.data['answers'].keys.toList();
+    for (int i = 0; i < _answerKeyList.length; i++) {
+      for (int j = 0; j < _question.data['answers'].length; j++) {
+        if (_answerKeyList[i].compareTo(allAnswerKeys[j]) == 0) {
+          _solution[_answerKeyList[i]] = _answerValueList[j];
+        }
+      }
+    }
   }
 
   void updateHighscore() async {
