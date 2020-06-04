@@ -16,7 +16,6 @@ class GamePage extends StatefulWidget {
 
 class _GamePageState extends State<GamePage> {
   List<String> _answerKeyList;
-  List<dynamic> _answerValueList;
   List<String> _resultList;
   List<bool> _answerVisibility;
   List<Icon> _icon;
@@ -28,7 +27,7 @@ class _GamePageState extends State<GamePage> {
   int _pointsCounter;
   int _roundCounter;
   int _answerNumber;
-  int _countdown;
+  int _countdownValue;
   Timer _timer;
   Future _loadQuestion;
   var _question;
@@ -78,7 +77,7 @@ class _GamePageState extends State<GamePage> {
                     Padding(
                       padding: const EdgeInsets.only(top: 38.0),
                       child: Text(
-                        '$_countdown',
+                        '$_countdownValue',
                         style: TextStyle(fontSize: 24.0, letterSpacing: 1.8, color: _countdownColor),
                       ),
                     ),
@@ -118,7 +117,7 @@ class _GamePageState extends State<GamePage> {
   Widget answerArea() {
     return Column(
       children: List.generate(
-        _answerNumber - 2,    // TODO warum so? Warum - 2?
+        _answerNumber - 2,
         (index) {
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -236,64 +235,81 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  void setSelectedText(int resultIndex) {
-    setState(() {
-      // Antwort ist ausgewählt
-      if (_selectedAnswerIndex != -1) {
-        // Ergebnisfeld ist leer
-        if (_resultList[resultIndex] == '') {
-          _resultList[resultIndex] = _answerKeyList[_selectedAnswerIndex];
-          _answerVisibility[_selectedAnswerIndex] = false;
-          _selectedAnswerIndex = -1;
-        }
-        // Ergebnisfeld ist nicht leer
-        else {
-          var temp = _resultList[resultIndex];
-          _resultList[resultIndex] = _answerKeyList[_selectedAnswerIndex];
-          _answerKeyList[_selectedAnswerIndex] = temp;
-          _selectedAnswerIndex = -1;
+  void startNewRound() {
+    _roundCounter++;
+    _nextStepButtonText = 'Ergebnisse anzeigen';
+    _showResults = false;
+    _answerCounter = 0;
+    _selectedAnswerIndex = -1;
+    _selectedResultIndex = -1;
+    _loadQuestion = loadQuestionData();
+  }
+
+  /// Zuerst werden die Frage Dokumente aus der Cloud Firestore geladen und anschließend wird zufällig eine
+  /// Frage ausgewählt. Danach werden die Fragedaten über [_question] abgespeichert und können über
+  /// _question['CloudFirestoreEintrag'] z.B. _question['questionText'] abgefragt werden.
+  Future<void> loadQuestionData() async {
+    Random random = new Random();
+    QuerySnapshot questionList = await Firestore.instance.collection('questions').getDocuments();
+    int randomQuestion = random.nextInt(questionList.documents.length);
+    _question = questionList.documents[randomQuestion];
+    chooseAnswersAndRememberSolution();
+    prepareQuestion();
+    startTimer();
+  }
+
+  /// Zuerst werden die Key/Value Pairs die in der Cloud Firestore bei jeder Frage als Map hinterlegt sind
+  /// in zwei Listen geschrieben um leichter auf diese zugreifen zu können.
+  /// Anschließend werden folgende Schritte durchgeführt:
+  /// 1. Alle Antworten werden aus der Map ausgelesen (Key Werte) und in eine Liste geladen.
+  /// 2. Die Antwortenliste wird zufällig durchgemischt (shuffle).
+  /// 3. Es werden zufällig die ersten 4-6 Antworten aus der Liste genommen.
+  /// 4. Es wird die richtige Lösung für diese Antworten vermerkt in [_solution]
+  void chooseAnswersAndRememberSolution() {
+    Random random = new Random();
+    List<String> allAnswerKeys = _question.data['answers'].keys.toList();
+    List<dynamic> answerValueList = _question.data['answers'].values.toList();
+    _solution = new LinkedHashMap();
+    _answerKeyList = _question.data['answers'].keys.toList();
+    _answerKeyList.shuffle();
+    _answerNumber = 4 + random.nextInt(6 - 4);   // 4 - 6 Antworten möglich
+    _answerKeyList = _answerKeyList.sublist(0, _answerNumber);
+    for (int i = 0; i < _answerKeyList.length; i++) {
+      for (int j = 0; j < _question.data['answers'].length; j++) {
+        if (_answerKeyList[i].compareTo(allAnswerKeys[j]) == 0) {
+          _solution[_answerKeyList[i]] = answerValueList[j];
         }
       }
-      // Ergebnis ist ausgewählt
-      else {
-        if (_selectedResultIndex == -1) {
-          _selectedResultIndex = resultIndex;
-          return;
-        }
-        // Ergebnisfeld ist leer
-        if (_resultList[resultIndex] == '') {
-          _resultList[resultIndex] = _resultList[_selectedResultIndex];
-          _resultList[_selectedResultIndex] = '';
-          _selectedResultIndex = -1;
-        }
-        // Ergebnisfeld ist nicht leer
-        else {
-          var temp = _resultList[resultIndex];
-          _resultList[resultIndex] = _resultList[_selectedResultIndex];
-          _resultList[_selectedResultIndex] = temp;
-          _selectedResultIndex = -1;
-        }
-      }
-    });
+    }
+  }
+
+  void prepareQuestion() {
+    _countdownValue = 5 * _answerNumber;
+    _resultList = new List(_answerNumber);
+    _answerVisibility = new List(_answerNumber);
+    for (int i = 0; i < _answerNumber; i++) {
+      _answerVisibility[i] = true;
+      _resultList[i] = '';
+    }
   }
 
   void startTimer() {
     const oneSecond = const Duration(seconds: 1);
     _timer = new Timer.periodic(
       oneSecond,
-      (Timer timer) => setState(
-        () {
-          if (_countdown < 1) {
+          (Timer timer) => setState(
+            () {
+          if (_countdownValue < 1) {
             timer.cancel();
             _countdownColor = Colors.white;
             showRightAndWrongAnswers();
           } else {
-            if (_countdown <= 6) {
+            if (_countdownValue <= 6) {
               _countdownColor = Colors.red;
             } else {
               _countdownColor = Colors.white;
             }
-            _countdown--;
+            _countdownValue--;
           }
         },
       ),
@@ -302,7 +318,7 @@ class _GamePageState extends State<GamePage> {
 
   void showRightAndWrongAnswers() {
     _showResults = true;
-    // Sortiert die Antwortenliste absteigend vom höchsten zum niedrigsten.
+    /// Sortiert die komplette Antwortenliste absteigend vom höchsten zum niedrigsten.
     var sortedKeys = _solution.keys.toList(growable: false)..sort((k1, k2) => _solution[k2].compareTo(_solution[k1]));
     _solutionMap = new LinkedHashMap.fromIterable(sortedKeys, key: (k) => k, value: (k) => _solution[k]);
     _icon = new List(_resultList.length);
@@ -315,6 +331,49 @@ class _GamePageState extends State<GamePage> {
         _isGameOver = true;
       }
     }
+  }
+
+  /// Mit Antworten sind hier die in der oberen Hälfte des Bildschirms angezeigten Chips gemeint.
+  /// Mit Ergebnisfeld sind hier die in der unteren Hälfte des Bildschirms angezeigten Chips gemeint.
+  void setSelectedText(int resultIndex) {
+    setState(() {
+      /// Antwort ist ausgewählt
+      if (_selectedAnswerIndex != -1) {
+        /// Ergebnisfeld ist leer
+        if (_resultList[resultIndex] == '') {
+          _resultList[resultIndex] = _answerKeyList[_selectedAnswerIndex];
+          _answerVisibility[_selectedAnswerIndex] = false;
+          _selectedAnswerIndex = -1;
+        }
+        /// Ergebnisfeld ist nicht leer
+        else {
+          var temp = _resultList[resultIndex];
+          _resultList[resultIndex] = _answerKeyList[_selectedAnswerIndex];
+          _answerKeyList[_selectedAnswerIndex] = temp;
+          _selectedAnswerIndex = -1;
+        }
+      }
+      /// Ergebnis ist ausgewählt
+      else {
+        if (_selectedResultIndex == -1) {
+          _selectedResultIndex = resultIndex;
+          return;
+        }
+        /// Ergebnisfeld ist leer
+        if (_resultList[resultIndex] == '') {
+          _resultList[resultIndex] = _resultList[_selectedResultIndex];
+          _resultList[_selectedResultIndex] = '';
+          _selectedResultIndex = -1;
+        }
+        /// Ergebnisfeld ist nicht leer
+        else {
+          var temp = _resultList[resultIndex];
+          _resultList[resultIndex] = _resultList[_selectedResultIndex];
+          _resultList[_selectedResultIndex] = temp;
+          _selectedResultIndex = -1;
+        }
+      }
+    });
   }
 
   void nextStep() {
@@ -366,66 +425,11 @@ class _GamePageState extends State<GamePage> {
     });
   }
 
-  void startNewRound() {
-    _roundCounter++;
-    _nextStepButtonText = 'Ergebnisse anzeigen';
-    _showResults = false;
-    _answerCounter = 0;
-    _selectedAnswerIndex = -1;
-    _selectedResultIndex = -1;
-    _countdownColor = Colors.white;
-    _loadQuestion = loadQuestionData();
-  }
-
-  /*
-   TODO Funktion kommentieren
-   */
-  Future<void> loadQuestionData() async {
-    QuerySnapshot questionList = await Firestore.instance.collection('questions').getDocuments();
-    Random random = new Random();
-    int randomQuestion = random.nextInt(questionList.documents.length);
-    _question = questionList.documents[randomQuestion];
-    Random answerRandom = new Random();
-    _answerNumber = 4 + answerRandom.nextInt(6 - 4);   // 4 - 6 Antworten möglich
-    prepareQuestion(_answerNumber);
-    _countdown = 5 * _answerNumber;
-    _resultList = new List(_answerNumber);
-    for (int i = 0; i < _answerNumber; i++) {
-      _resultList[i] = '';
-      print(_resultList[i]);
-    }
-    _answerVisibility = new List(_answerNumber);
-    print(_answerNumber);
-    for (int i = 0; i < _answerNumber; i++) {
-      _answerVisibility[i] = true;
-    }
-    startTimer();
-  }
-
-  /*
-   TODO Funktion kommentieren
-   */
-  void prepareQuestion(int answerNumber) {
-    _answerKeyList = _question.data['answers'].keys.toList();
-    _answerValueList = _question.data['answers'].values.toList();
-    _solution = new LinkedHashMap();
-    _answerKeyList.shuffle();
-    _answerKeyList = _answerKeyList.sublist(0, answerNumber);
-    List<String> allAnswerKeys = _question.data['answers'].keys.toList();
-    for (int i = 0; i < _answerKeyList.length; i++) {
-      for (int j = 0; j < _question.data['answers'].length; j++) {
-        if (_answerKeyList[i].compareTo(allAnswerKeys[j]) == 0) {
-          _solution[_answerKeyList[i]] = _answerValueList[j];
-        }
-      }
-    }
-  }
-
   void updateHighscore() async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     FirebaseUser user = await _auth.currentUser();
-    bool newHighscore = await checkNewHighscore(user);
-    if (newHighscore) {
+    bool isNewHighscore = await checkNewHighscore(user);
+    if (isNewHighscore) {
       Firestore.instance.collection('users').document(user.uid).updateData({
         'classicHighscoreSP': _pointsCounter,
       });
