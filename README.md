@@ -1,6 +1,6 @@
 # Quiz-Match
 
-## What I learned/improved in this project
+## What skills I learned/improved in this project
 
 - Flutter
 - Dart
