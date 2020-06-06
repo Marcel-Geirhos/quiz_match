@@ -5,6 +5,6 @@
 - Flutter
 - Dart
 - Firebase
- - E-mail and password Authentication
- - Cloud Firestore
+  - E-mail and password Authentication
+  - Cloud Firestore
 - UI/UX Design
