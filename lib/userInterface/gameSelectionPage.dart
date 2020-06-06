@@ -47,7 +47,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
               return Swiper(
-                itemCount: 2,
+                itemCount: 4,
                 itemBuilder: (BuildContext context, int index) {
                   return gameCardList(index);
                 },
@@ -69,10 +69,13 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
     if (index == 0) {
       return classicSPCard();
     } else if (index == 1) {
-      return questionSPCard();
+      return questionSPCard(5);
     } else if (index == 2) {
-      // TODO weitere Spielmodi implementieren.
+      return questionSPCard(10);
+    } else if (index == 3) {
+      return questionSPCard(15);
     }
+    // TODO weitere Spielmodi implementieren
   }
 
   Widget classicSPCard() {
@@ -106,7 +109,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             Divider(color: Colors.white),
             FlatButton(
               onPressed: () => Navigator.pushAndRemoveUntil(
-                  context, MaterialPageRoute(builder: (BuildContext context) => GamePage()), ModalRoute.withName('/')),
+                  context, MaterialPageRoute(builder: (BuildContext context) => GamePage(0)), ModalRoute.withName('/')),
               child: Text(
                 'Spielen',
                 style: TextStyle(fontSize: 18.0, letterSpacing: 1.2),
@@ -118,7 +121,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
     );
   }
 
-  Widget questionSPCard() {
+  Widget questionSPCard(int numberQuestions) {
     return Card(
       elevation: 8.0,
       margin: EdgeInsets.fromLTRB(10, 120, 10, 70),
@@ -127,13 +130,13 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
         child: Column(
           children: <Widget>[
             Text(
-              '10 Fragen',
+              '$numberQuestions Fragen',
               style: TextStyle(fontSize: 32.0, letterSpacing: 1.2),
             ),
             Padding(
               padding: const EdgeInsets.only(top: 80.0),
               child: Text(
-                'Spiele 10 Fragen und beantworte soviel wie möglich richtig und schlage den Highscore.',
+                'Spiele $numberQuestions Fragen und beantworte soviel wie möglich richtig und schlage den Highscore.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),
@@ -141,7 +144,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             Padding(
               padding: const EdgeInsets.only(top: 16.0, bottom: 52.0),
               child: Text(
-                'Bestes Ergebnis:\n${_userHighscores['questionHighscoreSP']}',
+                'Bestes Ergebnis:\n${_userHighscores['questionHighscoreSP$numberQuestions']}',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),
@@ -149,7 +152,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             Divider(color: Colors.white),
             FlatButton(
               onPressed: () => Navigator.pushAndRemoveUntil(
-                  context, MaterialPageRoute(builder: (BuildContext context) => GamePage()), ModalRoute.withName('/')),
+                  context, MaterialPageRoute(builder: (BuildContext context) => GamePage(1, numberQuestions)), ModalRoute.withName('/')),
               child: Text(
                 'Spielen',
                 style: TextStyle(fontSize: 18.0, letterSpacing: 1.2),

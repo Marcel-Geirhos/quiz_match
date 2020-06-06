@@ -10,6 +10,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:quiz_match/userInterface/gameSelectionPage.dart';
 
 class GamePage extends StatefulWidget {
+  /// Je nachdem welcher Spielmodus vom Benutzer ausgewählt wurde wird folgender Wert übergeben:
+  /// 0 = Klassik Modus
+  /// 1 = 5, 10, 15 Fragen Modus
+  final int gameMode;
+  final int numberQuestions;
+
+  const GamePage(this.gameMode, [this.numberQuestions = 0]);
+
   @override
   _GamePageState createState() => _GamePageState();
 }
@@ -34,6 +42,7 @@ class _GamePageState extends State<GamePage> {
   Color _countdownColor;
   bool _showResults;
   bool _isGameOver;
+  bool _disableChips;
   String _nextStepButtonText;
 
   @override
@@ -69,7 +78,7 @@ class _GamePageState extends State<GamePage> {
                     Padding(
                       padding: const EdgeInsets.only(top: 36.0, left: 12.0),
                       child: Text(
-                        'Runde\n$_roundCounter',
+                        widget.gameMode == 0 ? 'Runde\n$_roundCounter' : 'Runde\n$_roundCounter / ${widget.numberQuestions}',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 16.0),
                       ),
@@ -133,30 +142,33 @@ class _GamePageState extends State<GamePage> {
                     maintainState: true,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
-                      child: ChoiceChip(
-                        label: Container(
-                          width: 100,
-                          child: AutoSizeText(
-                            _answerKeyList[_answerCounter - 1],
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
+                      child: AbsorbPointer(
+                        absorbing: _disableChips,
+                        child: ChoiceChip(
+                          label: Container(
+                            width: 100,
+                            child: AutoSizeText(
+                              _answerKeyList[_answerCounter - 1],
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                            ),
                           ),
+                          selected: _selectedAnswerIndex == index * 2 + index2,
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedAnswerIndex = index * 2 + index2;
+                              // Ergebnisfeld wird mit Antwort ausgetauscht
+                              if (_selectedResultIndex != -1) {
+                                var temp = _resultList[_selectedResultIndex];
+                                _resultList[_selectedResultIndex] = _answerKeyList[_selectedAnswerIndex];
+                                _answerKeyList[_selectedAnswerIndex] = temp;
+                                _selectedResultIndex = -1;
+                                _selectedAnswerIndex = -1;
+                              }
+                            });
+                          },
+                          selectedColor: Color(0xffffc107),
                         ),
-                        selected: _selectedAnswerIndex == index * 2 + index2,
-                        onSelected: (selected) {
-                          setState(() {
-                            _selectedAnswerIndex = index * 2 + index2;
-                            // Ergebnisfeld wird mit Antwort ausgetauscht
-                            if (_selectedResultIndex != -1) {
-                              var temp = _resultList[_selectedResultIndex];
-                              _resultList[_selectedResultIndex] = _answerKeyList[_selectedAnswerIndex];
-                              _answerKeyList[_selectedAnswerIndex] = temp;
-                              _selectedResultIndex = -1;
-                              _selectedAnswerIndex = -1;
-                            }
-                          });
-                        },
-                        selectedColor: Color(0xffffc107),
                       ),
                     ),
                   );
@@ -197,19 +209,22 @@ class _GamePageState extends State<GamePage> {
                     ),
                     padding: EdgeInsets.only(right: 70.0),
                   ),
-                  GestureDetector(
-                    onTap: () => setSelectedText(index),
-                    child: ChoiceChip(
-                      label: Container(
-                        width: 150,
-                        child: AutoSizeText(
-                          _resultList[index]?.toString() ?? '',
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
+                  AbsorbPointer(
+                    absorbing: _disableChips,
+                    child: GestureDetector(
+                      onTap: () => setSelectedText(index),
+                      child: ChoiceChip(
+                        label: Container(
+                          width: 150,
+                          child: AutoSizeText(
+                            _resultList[index]?.toString() ?? '',
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                          ),
                         ),
+                        selected: _selectedResultIndex == index,
+                        selectedColor: Color(0xffffc107),
                       ),
-                      selected: _selectedResultIndex == index,
-                      selectedColor: Color(0xffffc107),
                     ),
                   ),
                 ],
@@ -221,24 +236,19 @@ class _GamePageState extends State<GamePage> {
           _question['bottomText'],
           style: TextStyle(fontSize: 20.0),
         ),
-        Visibility(
-          visible: _showResults,
-          maintainSize: true,
-          maintainAnimation: true,
-          maintainState: true,
-          child: RaisedButton(
-            onPressed: () => nextStep(),
-            child: Text(_nextStepButtonText),
-          ),
-        )
+        RaisedButton(
+          onPressed: () => nextStep(),
+          child: Text(_nextStepButtonText),
+        ),
       ],
     );
   }
 
   void startNewRound() {
     _roundCounter++;
-    _nextStepButtonText = 'Ergebnisse anzeigen';
+    _nextStepButtonText = 'Fertig';
     _showResults = false;
+    _disableChips = false;
     _answerCounter = 0;
     _selectedAnswerIndex = -1;
     _selectedResultIndex = -1;
@@ -272,7 +282,12 @@ class _GamePageState extends State<GamePage> {
     _solution = new LinkedHashMap();
     _answerKeyList = _question.data['answers'].keys.toList();
     _answerKeyList.shuffle();
-    _answerNumber = 4 + random.nextInt(6 - 4);   // 4 - 6 Antworten möglich
+    // TODO muss noch überlegt werden, ob dies so bleibt
+    if (widget.gameMode == 0) {
+      _answerNumber = 4 + random.nextInt(6 - 4);  // 4 - 6 Antworten möglich
+    } else {
+      _answerNumber = 5;
+    }
     _answerKeyList = _answerKeyList.sublist(0, _answerNumber);
     for (int i = 0; i < _answerKeyList.length; i++) {
       for (int j = 0; j < _question.data['answers'].length; j++) {
@@ -297,11 +312,13 @@ class _GamePageState extends State<GamePage> {
     const oneSecond = const Duration(seconds: 1);
     _timer = new Timer.periodic(
       oneSecond,
-          (Timer timer) => setState(
-            () {
+      (Timer timer) => setState(
+        () {
           if (_countdownValue < 1) {
             timer.cancel();
+            _disableChips = true;
             _countdownColor = Colors.white;
+            _nextStepButtonText = 'Ergebnisse anzeigen';
             showRightAndWrongAnswers();
           } else {
             if (_countdownValue <= 6) {
@@ -316,6 +333,7 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
+  /// TODO Funktion kommentieren
   void showRightAndWrongAnswers() {
     _showResults = true;
     /// Sortiert die komplette Antwortenliste absteigend vom höchsten zum niedrigsten.
@@ -328,7 +346,9 @@ class _GamePageState extends State<GamePage> {
         _pointsCounter++;
       } else {
         _icon[i] = Icon(Icons.close, color: Colors.red);
-        _isGameOver = true;
+        if (widget.gameMode == 0) {
+          _isGameOver = true;
+        }
       }
     }
   }
@@ -345,6 +365,7 @@ class _GamePageState extends State<GamePage> {
           _answerVisibility[_selectedAnswerIndex] = false;
           _selectedAnswerIndex = -1;
         }
+
         /// Ergebnisfeld ist nicht leer
         else {
           var temp = _resultList[resultIndex];
@@ -353,18 +374,21 @@ class _GamePageState extends State<GamePage> {
           _selectedAnswerIndex = -1;
         }
       }
+
       /// Ergebnis ist ausgewählt
       else {
         if (_selectedResultIndex == -1) {
           _selectedResultIndex = resultIndex;
           return;
         }
+
         /// Ergebnisfeld ist leer
         if (_resultList[resultIndex] == '') {
           _resultList[resultIndex] = _resultList[_selectedResultIndex];
           _resultList[_selectedResultIndex] = '';
           _selectedResultIndex = -1;
         }
+
         /// Ergebnisfeld ist nicht leer
         else {
           var temp = _resultList[resultIndex];
@@ -377,7 +401,9 @@ class _GamePageState extends State<GamePage> {
   }
 
   void nextStep() {
-    if (_nextStepButtonText == 'Ergebnisse anzeigen') {
+    if (_nextStepButtonText == 'Fertig') {
+      _countdownValue = 0;
+    } else if (_nextStepButtonText == 'Ergebnisse anzeigen') {
       showResults();
     } else if (_nextStepButtonText == 'Nächste Frage') {
       startNewRound();
@@ -393,7 +419,7 @@ class _GamePageState extends State<GamePage> {
   Widget gameOverDialog() {
     return AlertDialog(
       title: Text(
-        'Game Over',
+        'Spiel beendet',
         textAlign: TextAlign.center,
       ),
       content: Text('Erreichte Punktzahl: $_pointsCounter'),
@@ -416,30 +442,47 @@ class _GamePageState extends State<GamePage> {
       _resultList[i] = _solutionMap.keys.elementAt(i);
     }
     setState(() {
-      if (_isGameOver) {
-        _nextStepButtonText = 'Spiel beenden';
-        updateHighscore();
+      // TODO kann optimiert werden
+      if (widget.gameMode == 0) {
+        if (_isGameOver) {
+          _nextStepButtonText = 'Spiel beenden';
+          updateHighscore();
+        } else {
+          _nextStepButtonText = 'Nächste Frage';
+        }
       } else {
-        _nextStepButtonText = 'Nächste Frage';
+       if (_roundCounter == widget.numberQuestions) {
+         _nextStepButtonText = 'Spiel beenden';
+         updateHighscore();
+       } else {
+         _nextStepButtonText = 'Nächste Frage';
+       }
       }
     });
   }
-
+  
   void updateHighscore() async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     FirebaseUser user = await _auth.currentUser();
-    bool isNewHighscore = await checkNewHighscore(user);
-    if (isNewHighscore) {
+    String highScoreFieldName;
+    bool isNewHighScore;
+    if (widget.gameMode == 0) {
+      highScoreFieldName = 'classicHighscoreSP';
+    } else {
+      highScoreFieldName = 'questionHighscoreSP${widget.numberQuestions}';
+    }
+    isNewHighScore = await checkNewHighscore(user, highScoreFieldName);
+    if (isNewHighScore) {
       Firestore.instance.collection('users').document(user.uid).updateData({
-        'classicHighscoreSP': _pointsCounter,
+        highScoreFieldName: _pointsCounter,
       });
     }
   }
 
-  Future<bool> checkNewHighscore(FirebaseUser user) async {
+  Future<bool> checkNewHighscore(FirebaseUser user, String highScoreFieldName) async {
     var userData = await Firestore.instance.collection('users').document(user.uid).get();
     // Neuer Highscore
-    if (_pointsCounter > userData['classicHighscoreSP']) {
+    if (_pointsCounter > userData[highScoreFieldName]) {
       return true;
     }
     return false;
