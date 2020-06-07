@@ -460,7 +460,7 @@ class _GamePageState extends State<GamePage> {
       }
     });
   }
-  
+
   void updateHighscore() async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     FirebaseUser user = await _auth.currentUser();

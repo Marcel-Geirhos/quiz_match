@@ -6,6 +6,7 @@ import 'package:quiz_match/utils/systemSettings.dart';
 import 'package:quiz_match/userInterface/gamePage.dart';
 import 'package:quiz_match/userInterface/loginPage.dart';
 import 'package:quiz_match/userInterface/settingsPage.dart';
+import 'package:quiz_match/userInterface/highscorePage.dart';
 
 class GameSelectionPage extends StatefulWidget {
   @override
@@ -14,14 +15,14 @@ class GameSelectionPage extends StatefulWidget {
 
 class _GameSelectionPageState extends State<GameSelectionPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  Future _loadHighscores;
-  var _userHighscores;
+  Future _loadHighScores;
+  var _userHighScores;
 
   @override
   void initState() {
     super.initState();
     SystemSettings.allowOnlyPortraitOrientation();
-    _loadHighscores = loadHighscores();
+    _loadHighScores = loadHighscores();
   }
 
   @override
@@ -33,17 +34,17 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
           automaticallyImplyLeading: false,
           leading: IconButton(
             icon: Icon(Icons.settings),
-            onPressed: () => toSettings(),
+            onPressed: () => toPage(SettingsPage()),
           ),
           actions: <Widget>[
             IconButton(
-              icon: Icon(Icons.exit_to_app),
-              onPressed: () => signOutDialog(),
+              icon: Icon(Icons.equalizer),
+              onPressed: () => toPage(HighScorePage()),
             ),
           ],
         ),
         body: FutureBuilder(
-          future: _loadHighscores,
+          future: _loadHighScores,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
               return Swiper(
@@ -101,7 +102,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             Padding(
               padding: const EdgeInsets.only(top: 16.0, bottom: 92.0),
               child: Text(
-                'Bestes Ergebnis:\n${_userHighscores['classicHighscoreSP']}',
+                'Bestes Ergebnis:\n${_userHighScores['classicHighscoreSP']}',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),
@@ -144,7 +145,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             Padding(
               padding: const EdgeInsets.only(top: 16.0, bottom: 52.0),
               child: Text(
-                'Bestes Ergebnis:\n${_userHighscores['questionHighscoreSP$numberQuestions']}',
+                'Bestes Ergebnis:\n${_userHighScores['questionHighscoreSP$numberQuestions']}',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),
@@ -166,7 +167,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
 
   Future<void> loadHighscores() async {
     FirebaseUser user = await _auth.currentUser();
-    _userHighscores = await Firestore.instance.collection('users').document(user.uid).get();
+    _userHighScores = await Firestore.instance.collection('users').document(user.uid).get();
   }
 
   Future<bool> signOutDialog() async {
@@ -190,8 +191,8 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
         false;
   }
 
-  void toSettings() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage()));
+  void toPage(Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => page));
   }
 
   void signOut() async {
