@@ -44,6 +44,7 @@ class _GamePageState extends State<GamePage> {
   bool _isGameOver;
   bool _disableChips;
   String _nextStepButtonText;
+  List<dynamic> _resultValueList;
 
   @override
   void initState() {
@@ -78,7 +79,9 @@ class _GamePageState extends State<GamePage> {
                     Padding(
                       padding: const EdgeInsets.only(top: 36.0, left: 12.0),
                       child: Text(
-                        widget.gameMode == 0 ? 'Runde\n$_roundCounter' : 'Runde\n$_roundCounter / ${widget.numberQuestions}',
+                        widget.gameMode == 0
+                            ? 'Runde\n$_roundCounter'
+                            : 'Runde\n$_roundCounter / ${widget.numberQuestions}',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 16.0),
                       ),
@@ -207,23 +210,29 @@ class _GamePageState extends State<GamePage> {
                       maintainState: true,
                       child: _showResults ? _icon[index] : Icon(Icons.close),
                     ),
-                    padding: EdgeInsets.only(right: 70.0),
+                    padding: EdgeInsets.only(right: 70.0, top: 6.0),
                   ),
                   AbsorbPointer(
                     absorbing: _disableChips,
                     child: GestureDetector(
                       onTap: () => setSelectedText(index),
-                      child: ChoiceChip(
-                        label: Container(
-                          width: 150,
-                          child: AutoSizeText(
-                            _resultList[index]?.toString() ?? '',
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 6.0),
+                        child: ChoiceChip(
+                          label: Container(
+                            width: 150,
+                            /// TODO kann verbessert werden
+                            child: AutoSizeText(
+                              '${_resultList[index].toString()}\n'
+                              '${_nextStepButtonText == 'Nächste Frage' || _nextStepButtonText == 'Spiel beenden' ? _resultValueList[index].toString() : ''} '
+                              '${_nextStepButtonText == 'Nächste Frage' || _nextStepButtonText == 'Spiel beenden' ? _question['unit'] : ''}',
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                            ),
                           ),
+                          selected: _selectedResultIndex == index,
+                          selectedColor: Color(0xffffc107),
                         ),
-                        selected: _selectedResultIndex == index,
-                        selectedColor: Color(0xffffc107),
                       ),
                     ),
                   ),
@@ -284,7 +293,7 @@ class _GamePageState extends State<GamePage> {
     _answerKeyList.shuffle();
     // TODO muss noch überlegt werden, ob dies so bleibt
     if (widget.gameMode == 0) {
-      _answerNumber = 4 + random.nextInt(6 - 4);  // 4 - 6 Antworten möglich
+      _answerNumber = 4 + random.nextInt(6 - 4); // 4 - 6 Antworten möglich
     } else {
       _answerNumber = 5;
     }
@@ -301,10 +310,12 @@ class _GamePageState extends State<GamePage> {
   void prepareQuestion() {
     _countdownValue = 5 * _answerNumber;
     _resultList = new List(_answerNumber);
+    _resultValueList = new List(_answerNumber);
     _answerVisibility = new List(_answerNumber);
     for (int i = 0; i < _answerNumber; i++) {
       _answerVisibility[i] = true;
       _resultList[i] = '';
+      _resultValueList[i] = '';
     }
   }
 
@@ -336,9 +347,11 @@ class _GamePageState extends State<GamePage> {
   /// TODO Funktion kommentieren
   void showRightAndWrongAnswers() {
     _showResults = true;
+
     /// Sortiert die komplette Antwortenliste absteigend vom höchsten zum niedrigsten.
     var sortedKeys = _solution.keys.toList(growable: false)..sort((k1, k2) => _solution[k2].compareTo(_solution[k1]));
     _solutionMap = new LinkedHashMap.fromIterable(sortedKeys, key: (k) => k, value: (k) => _solution[k]);
+    _resultValueList = _solutionMap.values.toList();
     _icon = new List(_resultList.length);
     for (int i = 0; i < _resultList.length; i++) {
       if (_resultList[i] == _solutionMap.keys.elementAt(i)) {
@@ -451,12 +464,12 @@ class _GamePageState extends State<GamePage> {
           _nextStepButtonText = 'Nächste Frage';
         }
       } else {
-       if (_roundCounter == widget.numberQuestions) {
-         _nextStepButtonText = 'Spiel beenden';
-         updateHighscore();
-       } else {
-         _nextStepButtonText = 'Nächste Frage';
-       }
+        if (_roundCounter == widget.numberQuestions) {
+          _nextStepButtonText = 'Spiel beenden';
+          updateHighscore();
+        } else {
+          _nextStepButtonText = 'Nächste Frage';
+        }
       }
     });
   }

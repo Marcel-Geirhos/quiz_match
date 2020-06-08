@@ -8,13 +8,11 @@ class HighScorePage extends StatefulWidget {
 }
 
 class _HighScorePageState extends State<HighScorePage> {
-  Future _loadHighScore;
 
   @override
   void initState() {
     super.initState();
     SystemSettings.allowOnlyPortraitOrientation();
-    //_loadHighScore = loadHighScore();
   }
 
   @override
@@ -32,20 +30,16 @@ class _HighScorePageState extends State<HighScorePage> {
             }
             return ListView(
               children: snapshot.data.documents.map((DocumentSnapshot document) {
-                return ListTile(
-                  title: Text('${document['username']}'),
-                  trailing: Text('${document['classicHighscoreSP']}'),
+                return Column(
+                  children: <Widget>[
+                    ListTile(
+                      title: Text('${document['username']}'),
+                      trailing: Text('${document['classicHighscoreSP']}'),
+                    ),
+                    Divider(),
+                  ],
                 );
               }).toList(),
-              /*itemCount: 3,
-              itemBuilder: (BuildContext context, int index) {
-                  return ListTile(
-                    leading: CircleAvatar(child: Text('${index + 1}')),
-                  );
-              },
-              separatorBuilder: (BuildContext context, int index) {
-                return Divider();
-              },*/
             );
           },
         ),
