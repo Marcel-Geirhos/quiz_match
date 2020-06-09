@@ -36,6 +36,7 @@ class _GamePageState extends State<GamePage> {
   int _roundCounter;
   int _answerNumber;
   int _countdownValue;
+  int _bonusPointsForRemainingTime;
   Timer _timer;
   Future _loadQuestion;
   var _question;
@@ -79,9 +80,7 @@ class _GamePageState extends State<GamePage> {
                     Padding(
                       padding: const EdgeInsets.only(top: 36.0, left: 12.0),
                       child: Text(
-                        widget.gameMode == 0
-                            ? 'Runde\n$_roundCounter'
-                            : 'Runde\n$_roundCounter / ${widget.numberQuestions}',
+                        'Punkte\n$_pointsCounter',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 16.0),
                       ),
@@ -93,12 +92,18 @@ class _GamePageState extends State<GamePage> {
                         style: TextStyle(fontSize: 24.0, letterSpacing: 1.8, color: _countdownColor),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 36.0, right: 12.0),
-                      child: Text(
-                        'Punkte\n$_pointsCounter',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16.0),
+                    Visibility(
+                      visible: false,     /// TODO für Mehrspielermodus aktivieren (true)
+                      maintainSize: true,
+                      maintainAnimation: true,
+                      maintainState: true,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 36.0, right: 12.0),
+                        child: Text(
+                          'Punkte\n$_pointsCounter',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16.0),
+                        ),
                       ),
                     ),
                   ],
@@ -190,9 +195,19 @@ class _GamePageState extends State<GamePage> {
   Widget resultArea() {
     return Column(
       children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6.0),
+          child: Text(
+            widget.gameMode == 0
+                ? 'Runde: $_roundCounter'
+                : 'Runde: $_roundCounter / ${widget.numberQuestions}',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18.0),
+          ),
+        ),
         Text(
           _question['topText'],
-          style: TextStyle(fontSize: 20.0),
+          style: TextStyle(fontSize: 18.0),
         ),
         Column(
           children: List.generate(
@@ -243,7 +258,7 @@ class _GamePageState extends State<GamePage> {
         ),
         Text(
           _question['bottomText'],
-          style: TextStyle(fontSize: 20.0),
+          style: TextStyle(fontSize: 18.0),
         ),
         RaisedButton(
           onPressed: () => nextStep(),
@@ -285,18 +300,19 @@ class _GamePageState extends State<GamePage> {
   /// 3. Es werden zufällig die ersten 4-6 Antworten aus der Liste genommen.
   /// 4. Es wird die richtige Lösung für diese Antworten vermerkt in [_solution]
   void chooseAnswersAndRememberSolution() {
-    Random random = new Random();
+    //Random random = new Random();
     List<String> allAnswerKeys = _question.data['answers'].keys.toList();
     List<dynamic> answerValueList = _question.data['answers'].values.toList();
     _solution = new LinkedHashMap();
     _answerKeyList = _question.data['answers'].keys.toList();
     _answerKeyList.shuffle();
     // TODO muss noch überlegt werden, ob dies so bleibt
-    if (widget.gameMode == 0) {
+    /*if (widget.gameMode == 0) {
       _answerNumber = 4 + random.nextInt(6 - 4); // 4 - 6 Antworten möglich
     } else {
       _answerNumber = 5;
-    }
+    }*/
+    _answerNumber = 5;
     _answerKeyList = _answerKeyList.sublist(0, _answerNumber);
     for (int i = 0; i < _answerKeyList.length; i++) {
       for (int j = 0; j < _question.data['answers'].length; j++) {
@@ -308,7 +324,7 @@ class _GamePageState extends State<GamePage> {
   }
 
   void prepareQuestion() {
-    _countdownValue = 5 * _answerNumber;
+    _countdownValue = 30;
     _resultList = new List(_answerNumber);
     _resultValueList = new List(_answerNumber);
     _answerVisibility = new List(_answerNumber);
@@ -346,8 +362,8 @@ class _GamePageState extends State<GamePage> {
 
   /// TODO Funktion kommentieren
   void showRightAndWrongAnswers() {
+    int rightAnswers = 0;
     _showResults = true;
-
     /// Sortiert die komplette Antwortenliste absteigend vom höchsten zum niedrigsten.
     var sortedKeys = _solution.keys.toList(growable: false)..sort((k1, k2) => _solution[k2].compareTo(_solution[k1]));
     _solutionMap = new LinkedHashMap.fromIterable(sortedKeys, key: (k) => k, value: (k) => _solution[k]);
@@ -356,7 +372,7 @@ class _GamePageState extends State<GamePage> {
     for (int i = 0; i < _resultList.length; i++) {
       if (_resultList[i] == _solutionMap.keys.elementAt(i)) {
         _icon[i] = Icon(Icons.done, color: Colors.green);
-        _pointsCounter++;
+        rightAnswers++;
       } else {
         _icon[i] = Icon(Icons.close, color: Colors.red);
         if (widget.gameMode == 0) {
@@ -364,6 +380,7 @@ class _GamePageState extends State<GamePage> {
         }
       }
     }
+    _pointsCounter = _pointsCounter + rightAnswers * 20 + _bonusPointsForRemainingTime;
   }
 
   /// Mit Antworten sind hier die in der oberen Hälfte des Bildschirms angezeigten Chips gemeint.
@@ -415,6 +432,7 @@ class _GamePageState extends State<GamePage> {
 
   void nextStep() {
     if (_nextStepButtonText == 'Fertig') {
+      _bonusPointsForRemainingTime = _countdownValue;
       _countdownValue = 0;
     } else if (_nextStepButtonText == 'Ergebnisse anzeigen') {
       showResults();

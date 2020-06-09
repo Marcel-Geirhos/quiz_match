@@ -253,6 +253,9 @@ class _RegisterPageState extends State<RegisterPage> {
           'username': _username.text.toString().trim(),
           'coins': 0,
           'classicHighscoreSP': 0,
+          'questionHighscoreSP5': 0,
+          'questionHighscoreSP10': 0,
+          'questionHighscoreSP15': 0,
         });
       }
     } catch (error) {
