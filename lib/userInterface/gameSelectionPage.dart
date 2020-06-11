@@ -102,7 +102,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             Padding(
               padding: const EdgeInsets.only(top: 16.0, bottom: 92.0),
               child: Text(
-                'Bestes Ergebnis:\n${_userHighScores['classicHighscoreSP']}',
+                'Bestes Ergebnis:\n${_userHighScores['classicHighscorePSP']}',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),
@@ -145,7 +145,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             Padding(
               padding: const EdgeInsets.only(top: 16.0, bottom: 52.0),
               child: Text(
-                'Bestes Ergebnis:\n${_userHighScores['questionHighscoreSP$numberQuestions']}',
+                'Bestes Ergebnis:\n${_userHighScores['questionHighscorePSP$numberQuestions']}',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),

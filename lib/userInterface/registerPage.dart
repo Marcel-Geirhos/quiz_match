@@ -252,10 +252,11 @@ class _RegisterPageState extends State<RegisterPage> {
           'email': _email.text.toString().trim(),
           'username': _username.text.toString().trim(),
           'coins': 0,
-          'classicHighscoreSP': 0,
-          'questionHighscoreSP5': 0,
-          'questionHighscoreSP10': 0,
-          'questionHighscoreSP15': 0,
+          'classicHighscoreRASP': 0,
+          'classicHighscorePSP': 0,
+          'questionHighscorePSP5': 0,
+          'questionHighscorePSP10': 0,
+          'questionHighscorePSP15': 0,
         });
       }
     } catch (error) {

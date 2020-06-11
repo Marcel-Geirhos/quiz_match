@@ -32,6 +32,7 @@ class _GamePageState extends State<GamePage> {
   int _selectedAnswerIndex;
   int _selectedResultIndex;
   int _answerCounter;
+  int _rightAnswerCounter;
   int _pointsCounter;
   int _roundCounter;
   int _answerNumber;
@@ -51,6 +52,7 @@ class _GamePageState extends State<GamePage> {
   void initState() {
     super.initState();
     SystemSettings.allowOnlyPortraitOrientation();
+    _rightAnswerCounter = 0;
     _pointsCounter = 0;
     _roundCounter = 0;
     _isGameOver = false;
@@ -195,15 +197,41 @@ class _GamePageState extends State<GamePage> {
   Widget resultArea() {
     return Column(
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6.0),
-          child: Text(
-            widget.gameMode == 0
-                ? 'Runde: $_roundCounter'
-                : 'Runde: $_roundCounter / ${widget.numberQuestions}',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18.0),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.max,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: Text(
+                '\n$_rightAnswerCounter',
+                style: TextStyle(fontSize: 16.0),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6.0),
+              child: Text(
+                widget.gameMode == 0
+                    ? 'Runde: $_roundCounter'
+                    : 'Runde: $_roundCounter / ${widget.numberQuestions}',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18.0),
+              ),
+            ),
+            Visibility(
+              visible: false,     /// TODO für Mehrspielermodus aktivieren (true)
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Text(
+                  '\n$_rightAnswerCounter',
+                  style: TextStyle(fontSize: 16.0),
+                ),
+              ),
+            ),
+          ],
         ),
         Text(
           _question['topText'],
@@ -297,21 +325,14 @@ class _GamePageState extends State<GamePage> {
   /// Anschließend werden folgende Schritte durchgeführt:
   /// 1. Alle Antworten werden aus der Map ausgelesen (Key Werte) und in eine Liste geladen.
   /// 2. Die Antwortenliste wird zufällig durchgemischt (shuffle).
-  /// 3. Es werden zufällig die ersten 4-6 Antworten aus der Liste genommen.
+  /// 3. Es werden zufällig die ersten 5 Antworten aus der Liste genommen.
   /// 4. Es wird die richtige Lösung für diese Antworten vermerkt in [_solution]
   void chooseAnswersAndRememberSolution() {
-    //Random random = new Random();
     List<String> allAnswerKeys = _question.data['answers'].keys.toList();
     List<dynamic> answerValueList = _question.data['answers'].values.toList();
     _solution = new LinkedHashMap();
     _answerKeyList = _question.data['answers'].keys.toList();
     _answerKeyList.shuffle();
-    // TODO muss noch überlegt werden, ob dies so bleibt
-    /*if (widget.gameMode == 0) {
-      _answerNumber = 4 + random.nextInt(6 - 4); // 4 - 6 Antworten möglich
-    } else {
-      _answerNumber = 5;
-    }*/
     _answerNumber = 5;
     _answerKeyList = _answerKeyList.sublist(0, _answerNumber);
     for (int i = 0; i < _answerKeyList.length; i++) {
@@ -381,6 +402,7 @@ class _GamePageState extends State<GamePage> {
       }
     }
     _pointsCounter = _pointsCounter + rightAnswers * 20 + _bonusPointsForRemainingTime;
+    _rightAnswerCounter += rightAnswers;
   }
 
   /// Mit Antworten sind hier die in der oberen Hälfte des Bildschirms angezeigten Chips gemeint.
@@ -477,14 +499,14 @@ class _GamePageState extends State<GamePage> {
       if (widget.gameMode == 0) {
         if (_isGameOver) {
           _nextStepButtonText = 'Spiel beenden';
-          updateHighscore();
+          updateHighScore();
         } else {
           _nextStepButtonText = 'Nächste Frage';
         }
       } else {
         if (_roundCounter == widget.numberQuestions) {
           _nextStepButtonText = 'Spiel beenden';
-          updateHighscore();
+          updateHighScore();
         } else {
           _nextStepButtonText = 'Nächste Frage';
         }
@@ -492,30 +514,40 @@ class _GamePageState extends State<GamePage> {
     });
   }
 
-  void updateHighscore() async {
+  void updateHighScore() async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     FirebaseUser user = await _auth.currentUser();
-    String highScoreFieldName;
-    bool isNewHighScore;
-    if (widget.gameMode == 0) {
-      highScoreFieldName = 'classicHighscoreSP';
-    } else {
-      highScoreFieldName = 'questionHighscoreSP${widget.numberQuestions}';
-    }
-    isNewHighScore = await checkNewHighscore(user, highScoreFieldName);
-    if (isNewHighScore) {
-      Firestore.instance.collection('users').document(user.uid).updateData({
-        highScoreFieldName: _pointsCounter,
-      });
+    for (int i = 0; i < 2; i++) {
+      String highScorePoints;
+      String highScoreFieldName;
+      if (i == 0) {
+        highScorePoints = 'P';
+      } else if (i == 1) {
+        highScorePoints = 'RA';
+      }
+      if (widget.gameMode == 0) {
+        highScoreFieldName = 'classicHighscore${highScorePoints}SP';
+      } else {
+        highScoreFieldName = 'questionHighscore${highScorePoints}SP${widget.numberQuestions}';
+      }
+      isNewHighScore(user, highScoreFieldName, highScorePoints);
     }
   }
 
-  Future<bool> checkNewHighscore(FirebaseUser user, String highScoreFieldName) async {
+  Future<void> isNewHighScore(FirebaseUser user, String highScoreFieldName, String highScorePoints) async {
     var userData = await Firestore.instance.collection('users').document(user.uid).get();
-    // Neuer Highscore
-    if (_pointsCounter > userData[highScoreFieldName]) {
-      return true;
+    if (highScorePoints == 'P') {
+      if (_pointsCounter > userData[highScoreFieldName]) {    // Neuer Punkte Highscore
+        Firestore.instance.collection('users').document(user.uid).updateData({
+          highScoreFieldName: _pointsCounter,
+        });
+      }
+    } else if (highScorePoints == 'RA') {
+      if (_rightAnswerCounter > userData[highScoreFieldName]) {    // Neuer richtige Antworten Highscore
+        Firestore.instance.collection('users').document(user.uid).updateData({
+          highScoreFieldName: _rightAnswerCounter,
+        });
+      }
     }
-    return false;
   }
 }
