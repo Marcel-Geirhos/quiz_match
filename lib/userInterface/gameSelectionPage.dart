@@ -92,7 +92,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
               style: TextStyle(fontSize: 32.0, letterSpacing: 1.2),
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 80.0),
+              padding: const EdgeInsets.only(top: 50.0),
               child: Text(
                 'Spiele zufällige Kategorien und schlage den Highscore.',
                 textAlign: TextAlign.center,
@@ -100,9 +100,17 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 16.0, bottom: 92.0),
+              padding: const EdgeInsets.only(top: 24.0),
               child: Text(
                 'Bestes Ergebnis:\n${_userHighScores['classicHighscorePSP']}',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18.0),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 12.0, bottom: 60.0),
+              child: Text(
+                'Meiste richtige Antworten:\n${_userHighScores['classicHighscoreRASP']}',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),
@@ -135,7 +143,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
               style: TextStyle(fontSize: 32.0, letterSpacing: 1.2),
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 80.0),
+              padding: const EdgeInsets.only(top: 50.0),
               child: Text(
                 'Spiele $numberQuestions Fragen und beantworte soviel wie möglich richtig und schlage den Highscore.',
                 textAlign: TextAlign.center,
@@ -143,9 +151,17 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 16.0, bottom: 52.0),
+              padding: const EdgeInsets.only(top: 12.0),
               child: Text(
-                'Bestes Ergebnis:\n${_userHighScores['questionHighscorePSP$numberQuestions']}',
+                'Beste Punktzahl:\n${_userHighScores['questionHighscorePSP$numberQuestions']}',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18.0),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 12.0, bottom: 30.0),
+              child: Text(
+                'Meiste richtige Antworten:\n${_userHighScores['questionHighscoreRASP$numberQuestions']}',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),

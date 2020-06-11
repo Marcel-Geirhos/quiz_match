@@ -33,6 +33,7 @@ class _HighScorePageState extends State<HighScorePage> {
             value: _currentHighScorePoints,
             items: _dropdownMenuHighScorePoints,
             onChanged: changedDropdownHighScorePoints,
+            underline: SizedBox(),    // Ohne Unterstrich
           ),
           Container(
             height: MediaQuery.of(context).size.height - 134,   // TODO noch nicht dynamisch genug für verschiedene Geräte
@@ -48,7 +49,7 @@ class _HighScorePageState extends State<HighScorePage> {
                       children: <Widget>[
                         ListTile(
                           title: Text('${document['username']}'),
-                          trailing: Text('${document['classicHighscorePSP']}'),
+                          trailing: _currentHighScorePoints == 'Punkte' ? Text('${document['classicHighscorePSP']}') : Text('${document['classicHighscoreRASP']}'),
                         ),
                         Divider(),
                       ],
@@ -78,6 +79,9 @@ class _HighScorePageState extends State<HighScorePage> {
   }
 
   Query loadHighScore() {
-    return Firestore.instance.collection('users').orderBy('classicHighscoreSP', descending: true).limit(10);
+    if (_currentHighScorePoints == 'Punkte') {
+      return Firestore.instance.collection('users').orderBy('classicHighscorePSP', descending: true).limit(50);
+    }
+    return Firestore.instance.collection('users').orderBy('classicHighscoreRASP', descending: true).limit(50);
   }
 }
