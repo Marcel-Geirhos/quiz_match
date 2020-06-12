@@ -7,6 +7,7 @@ import 'package:quiz_match/userInterface/gamePage.dart';
 import 'package:quiz_match/userInterface/loginPage.dart';
 import 'package:quiz_match/userInterface/settingsPage.dart';
 import 'package:quiz_match/userInterface/highscorePage.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class GameSelectionPage extends StatefulWidget {
   @override
@@ -31,14 +32,19 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
       onWillPop: signOutDialog,
       child: Scaffold(
         appBar: AppBar(
+          title: Text('Quiz Match'),
+          centerTitle: true,
           automaticallyImplyLeading: false,
           leading: IconButton(
-            icon: Icon(Icons.settings),
+            icon: Icon(FontAwesomeIcons.cog),
             onPressed: () => toPage(SettingsPage()),
           ),
           actions: <Widget>[
             IconButton(
-              icon: Icon(Icons.equalizer),
+              icon: Icon(
+                Icons.equalizer,
+                size: 30.0,
+              ),
               onPressed: () => toPage(HighScorePage()),
             ),
           ],
@@ -94,27 +100,53 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             Padding(
               padding: const EdgeInsets.only(top: 50.0),
               child: Text(
-                'Spiele zufällige Kategorien und schlage den Highscore.',
+                'Spiele solange bis zur ersten falschen Antwort.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 24.0),
-              child: Text(
-                'Bestes Ergebnis:\n${_userHighScores['classicHighscorePSP']}',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18.0),
+              padding: const EdgeInsets.only(top: 60.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Tooltip(
+                      message: 'Beste Punktzahl',
+                      child: Icon(FontAwesomeIcons.medal),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 40.0),
+                    child: Tooltip(
+                      message: 'Beste Punktzahl',
+                      child: Text(
+                        '${_userHighScores['classicHighscorePSP']}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 18.0),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Tooltip(
+                      message: 'Richtige Antworten',
+                      child: Icon(FontAwesomeIcons.solidCheckCircle),
+                    ),
+                  ),
+                  Tooltip(
+                    message: 'Richtige Antworten',
+                    child: Text(
+                      '${_userHighScores['classicHighscoreRASP']}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18.0),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 12.0, bottom: 60.0),
-              child: Text(
-                'Meiste richtige Antworten:\n${_userHighScores['classicHighscoreRASP']}',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18.0),
-              ),
-            ),
+            SizedBox(height: 90.0),
             Divider(color: Colors.white),
             FlatButton(
               onPressed: () => Navigator.pushAndRemoveUntil(
@@ -145,31 +177,59 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
             Padding(
               padding: const EdgeInsets.only(top: 50.0),
               child: Text(
-                'Spiele $numberQuestions Fragen und beantworte soviel wie möglich richtig und schlage den Highscore.',
+                'Spiele $numberQuestions Runden und beantworte soviel Fragen wie möglich richtig.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 12.0),
-              child: Text(
-                'Beste Punktzahl:\n${_userHighScores['questionHighscorePSP$numberQuestions']}',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18.0),
+              padding: const EdgeInsets.only(top: 60.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Tooltip(
+                      message: 'Beste Punktzahl',
+                      child: Icon(FontAwesomeIcons.medal),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 40.0),
+                    child: Tooltip(
+                      message: 'Beste Punktzahl',
+                      child: Text(
+                        '${_userHighScores['questionHighscorePSP$numberQuestions']}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 18.0),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Tooltip(
+                      message: 'Richtige Antworten',
+                      child: Icon(FontAwesomeIcons.solidCheckCircle),
+                    ),
+                  ),
+                  Tooltip(
+                    message: 'Richtige Antworten',
+                    child: Text(
+                      '${_userHighScores['questionHighscoreRASP$numberQuestions']}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18.0),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 12.0, bottom: 30.0),
-              child: Text(
-                'Meiste richtige Antworten:\n${_userHighScores['questionHighscoreRASP$numberQuestions']}',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18.0),
-              ),
-            ),
+            SizedBox(height: 75.0),
             Divider(color: Colors.white),
             FlatButton(
               onPressed: () => Navigator.pushAndRemoveUntil(
-                  context, MaterialPageRoute(builder: (BuildContext context) => GamePage(1, numberQuestions)), ModalRoute.withName('/')),
+                  context,
+                  MaterialPageRoute(builder: (BuildContext context) => GamePage(1, numberQuestions)),
+                  ModalRoute.withName('/')),
               child: Text(
                 'Spielen',
                 style: TextStyle(fontSize: 18.0, letterSpacing: 1.2),
