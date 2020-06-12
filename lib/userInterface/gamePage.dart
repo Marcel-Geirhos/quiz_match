@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -95,7 +96,9 @@ class _GamePageState extends State<GamePage> {
                       ),
                     ),
                     Visibility(
-                      visible: false,     /// TODO für Mehrspielermodus aktivieren (true)
+                      visible: false,
+
+                      /// TODO für Mehrspielermodus aktivieren (true)
                       maintainSize: true,
                       maintainAnimation: true,
                       maintainState: true,
@@ -211,15 +214,15 @@ class _GamePageState extends State<GamePage> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6.0),
               child: Text(
-                widget.gameMode == 0
-                    ? 'Runde: $_roundCounter'
-                    : 'Runde: $_roundCounter / ${widget.numberQuestions}',
+                widget.gameMode == 0 ? 'Runde: $_roundCounter' : 'Runde: $_roundCounter / ${widget.numberQuestions}',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18.0),
               ),
             ),
             Visibility(
-              visible: false,     /// TODO für Mehrspielermodus aktivieren (true)
+              visible: false,
+
+              /// TODO für Mehrspielermodus aktivieren (true)
               maintainSize: true,
               maintainAnimation: true,
               maintainState: true,
@@ -264,10 +267,10 @@ class _GamePageState extends State<GamePage> {
                         child: ChoiceChip(
                           label: Container(
                             width: 150,
-                            /// TODO kann verbessert werden
+                            // TODO kann verbessert werden
                             child: AutoSizeText(
                               '${_resultList[index].toString()}\n'
-                              '${_nextStepButtonText == 'Nächste Frage' || _nextStepButtonText == 'Spiel beenden' ? _resultValueList[index].toString() : ''} '
+                              '${_nextStepButtonText == 'Nächste Frage' || _nextStepButtonText == 'Spiel beenden' ? NumberFormat.simpleCurrency(locale: 'eu', name: '', decimalDigits: 0).format(_resultValueList[index]).toString() : ''} '
                               '${_nextStepButtonText == 'Nächste Frage' || _nextStepButtonText == 'Spiel beenden' ? _question['unit'] : ''}',
                               textAlign: TextAlign.center,
                               maxLines: 2,
@@ -385,6 +388,7 @@ class _GamePageState extends State<GamePage> {
   void showRightAndWrongAnswers() {
     int rightAnswers = 0;
     _showResults = true;
+
     /// Sortiert die komplette Antwortenliste absteigend vom höchsten zum niedrigsten.
     var sortedKeys = _solution.keys.toList(growable: false)..sort((k1, k2) => _solution[k2].compareTo(_solution[k1]));
     _solutionMap = new LinkedHashMap.fromIterable(sortedKeys, key: (k) => k, value: (k) => _solution[k]);
@@ -537,13 +541,15 @@ class _GamePageState extends State<GamePage> {
   Future<void> isNewHighScore(FirebaseUser user, String highScoreFieldName, String highScorePoints) async {
     var userData = await Firestore.instance.collection('users').document(user.uid).get();
     if (highScorePoints == 'P') {
-      if (_pointsCounter > userData[highScoreFieldName]) {    // Neuer Punkte Highscore
+      if (_pointsCounter > userData[highScoreFieldName]) {
+        // Neuer Punkte Highscore
         Firestore.instance.collection('users').document(user.uid).updateData({
           highScoreFieldName: _pointsCounter,
         });
       }
     } else if (highScorePoints == 'RA') {
-      if (_rightAnswerCounter > userData[highScoreFieldName]) {    // Neuer richtige Antworten Highscore
+      if (_rightAnswerCounter > userData[highScoreFieldName]) {
+        // Neuer richtige Antworten Highscore
         Firestore.instance.collection('users').document(user.uid).updateData({
           highScoreFieldName: _rightAnswerCounter,
         });
