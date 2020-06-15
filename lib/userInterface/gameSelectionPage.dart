@@ -110,17 +110,17 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Tooltip(
-                      message: 'Beste Punktzahl',
+                  GestureDetector(
+                    onTap: pointDescriptionDialog,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
                       child: Icon(FontAwesomeIcons.medal),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 40.0),
-                    child: Tooltip(
-                      message: 'Beste Punktzahl',
+                  GestureDetector(
+                    onTap: pointDescriptionDialog,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 40.0),
                       child: Text(
                         '${_userHighScores['classicHighscorePSP']}',
                         textAlign: TextAlign.center,
@@ -187,17 +187,17 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Tooltip(
-                      message: 'Beste Punktzahl',
+                  GestureDetector(
+                    onTap: pointDescriptionDialog,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
                       child: Icon(FontAwesomeIcons.medal),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 40.0),
-                    child: Tooltip(
-                      message: 'Beste Punktzahl',
+                  GestureDetector(
+                    onTap: pointDescriptionDialog,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 40.0),
                       child: Text(
                         '${_userHighScores['questionHighscorePSP$numberQuestions']}',
                         textAlign: TextAlign.center,
@@ -260,6 +260,24 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
               FlatButton(
                 onPressed: () => signOut(),
                 child: Text('Ja'),
+              ),
+            ],
+          ),
+        )) ??
+        false;
+  }
+
+  Future<bool> pointDescriptionDialog() async {
+    return (await showDialog(
+          context: context,
+          builder: (context) => new AlertDialog(
+            title: Text('Punktesystem'),
+            content: Text(
+                'Pro Sekunde: +1\n\nPro richtige Antwort: +15\n\nAlle Antworten richtig: +15'),
+            actions: <Widget>[
+              FlatButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text('OK'),
               ),
             ],
           ),

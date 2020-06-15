@@ -68,69 +68,72 @@ class _GamePageState extends State<GamePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: FutureBuilder(
-        future: _loadQuestion,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            _answerCounter = 0;
-            return Column(
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  mainAxisSize: MainAxisSize.max,
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 36.0, left: 12.0),
-                      child: Text(
-                        'Punkte\n$_pointsCounter',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16.0),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 38.0),
-                      child: Text(
-                        '$_countdownValue',
-                        style: TextStyle(fontSize: 24.0, letterSpacing: 1.8, color: _countdownColor),
-                      ),
-                    ),
-                    Visibility(
-                      visible: false,
-
-                      /// TODO für Mehrspielermodus aktivieren (true)
-                      maintainSize: true,
-                      maintainAnimation: true,
-                      maintainState: true,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 36.0, right: 12.0),
+    return WillPopScope(
+      onWillPop: gameCancelDialog,
+      child: Scaffold(
+        body: FutureBuilder(
+          future: _loadQuestion,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              _answerCounter = 0;
+              return Column(
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisSize: MainAxisSize.max,
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 36.0, left: 12.0),
                         child: Text(
                           'Punkte\n$_pointsCounter',
                           textAlign: TextAlign.center,
                           style: TextStyle(fontSize: 16.0),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
-                  child: Text(
-                    _question['questionText'],
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 20.0),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 38.0),
+                        child: Text(
+                          '$_countdownValue',
+                          style: TextStyle(fontSize: 24.0, letterSpacing: 1.8, color: _countdownColor),
+                        ),
+                      ),
+                      Visibility(
+                        visible: false,
+
+                        /// TODO für Mehrspielermodus aktivieren (true)
+                        maintainSize: true,
+                        maintainAnimation: true,
+                        maintainState: true,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 36.0, right: 12.0),
+                          child: Text(
+                            'Punkte\n$_pointsCounter',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16.0),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                answerArea(),
-                Divider(color: Colors.white),
-                resultArea(),
-              ],
-            );
-          } else if (snapshot.connectionState == ConnectionState.waiting) {
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
+                    child: Text(
+                      _question['questionText'],
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 20.0),
+                    ),
+                  ),
+                  answerArea(),
+                  Divider(color: Colors.white),
+                  resultArea(),
+                ],
+              );
+            } else if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
             return Center(child: CircularProgressIndicator());
-          }
-          return Center(child: CircularProgressIndicator());
-        },
+          },
+        ),
       ),
     );
   }
@@ -159,7 +162,7 @@ class _GamePageState extends State<GamePage> {
                         absorbing: _disableChips,
                         child: ChoiceChip(
                           label: Container(
-                            width: 100,
+                            width: 130,
                             child: AutoSizeText(
                               _answerKeyList[_answerCounter - 1],
                               textAlign: TextAlign.center,
@@ -256,7 +259,7 @@ class _GamePageState extends State<GamePage> {
                       maintainState: true,
                       child: _showResults ? _icon[index] : Icon(Icons.close),
                     ),
-                    padding: EdgeInsets.only(right: 70.0, top: 6.0),
+                    padding: EdgeInsets.only(right: 52.5, top: 6.0),
                   ),
                   AbsorbPointer(
                     absorbing: _disableChips,
@@ -266,7 +269,7 @@ class _GamePageState extends State<GamePage> {
                         padding: const EdgeInsets.only(top: 6.0),
                         child: ChoiceChip(
                           label: Container(
-                            width: 150,
+                            width: 180,
                             // TODO kann verbessert werden
                             child: AutoSizeText(
                               '${_resultList[index].toString()}\n'
@@ -291,9 +294,13 @@ class _GamePageState extends State<GamePage> {
           _question['bottomText'],
           style: TextStyle(fontSize: 18.0),
         ),
-        RaisedButton(
-          onPressed: () => nextStep(),
-          child: Text(_nextStepButtonText),
+        Container(
+          width: 200,
+          child: OutlineButton(
+            onPressed: () => nextStep(),
+            child: Text(_nextStepButtonText),
+            borderSide: BorderSide(color: Colors.white),
+          ),
         ),
       ],
     );
@@ -384,12 +391,16 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  /// TODO Funktion kommentieren
+  /// Um die richtigen Ergebnisse später anzuzeigen wird die Antwortenliste absteigend vom höchsten zum niedrigsten vorsortiert.
+  /// Anschließend wird überprüft, welche der Antworten vom Benutzer richtig und welche falsch gesetzt wurden. Die
+  /// richtigen Antworten werden mit einem grünem Haken gekenntzeichnet. Die falschen mit einem roten Kreuz.
+  /// Bei dem Spielmodus Klassik ist das Spiel beendet, sobald der Benutzer mindestens eine falsche Antwort gegeben hat.
+  /// Am Ende wird die erreichte Punktzahl in dieser Spielrunde berechnet.
   void showRightAndWrongAnswers() {
     int rightAnswers = 0;
+    int bonusPoints = 0;
     _showResults = true;
-
-    /// Sortiert die komplette Antwortenliste absteigend vom höchsten zum niedrigsten.
+    // Sortiert die komplette Antwortenliste absteigend vom höchsten zum niedrigsten.
     var sortedKeys = _solution.keys.toList(growable: false)..sort((k1, k2) => _solution[k2].compareTo(_solution[k1]));
     _solutionMap = new LinkedHashMap.fromIterable(sortedKeys, key: (k) => k, value: (k) => _solution[k]);
     _resultValueList = _solutionMap.values.toList();
@@ -400,12 +411,17 @@ class _GamePageState extends State<GamePage> {
         rightAnswers++;
       } else {
         _icon[i] = Icon(Icons.close, color: Colors.red);
-        if (widget.gameMode == 0) {
+        if (widget.gameMode == 0) {   // Spielmodus Klassik es wurde mindestens eine falsche Antwort gegeben.
           _isGameOver = true;
         }
       }
     }
-    _pointsCounter = _pointsCounter + rightAnswers * 20 + _bonusPointsForRemainingTime;
+    if (rightAnswers == 0) {  // Wenn keine Antwort richtig war gibt es auch keine Punkte für die restliche Zeit.
+      _bonusPointsForRemainingTime = 0;
+    } else if (rightAnswers == _resultList.length) {  // Wenn alle Antworten richtig waren gibt es nochmals 15 Punkte extra.
+      bonusPoints = 15;
+    }
+    _pointsCounter = _pointsCounter + rightAnswers * 15 + _bonusPointsForRemainingTime + bonusPoints;
     _rightAnswerCounter += rightAnswers;
   }
 
@@ -555,5 +571,31 @@ class _GamePageState extends State<GamePage> {
         });
       }
     }
+  }
+
+  Future<bool> gameCancelDialog() async {
+    return (await showDialog(
+      context: context,
+      builder: (context) => new AlertDialog(
+        title: Text('Spiel abbrechen?'),
+        content: Text('Willst du das aktuelle Spiel wirklich abbrechen? Alle Fortschritte gehen verloren.'),
+        actions: <Widget>[
+          FlatButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Nein'),
+          ),
+          FlatButton(
+            onPressed: () => gameCancel(),
+            child: Text('Ja'),
+          ),
+        ],
+      ),
+    )) ??
+        false;
+  }
+
+  void gameCancel() async {
+    Navigator.pushAndRemoveUntil(
+        context, MaterialPageRoute(builder: (BuildContext context) => GameSelectionPage()), ModalRoute.withName('/'));
   }
 }
