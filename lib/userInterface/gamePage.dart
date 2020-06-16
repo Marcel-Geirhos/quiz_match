@@ -117,9 +117,10 @@ class _GamePageState extends State<GamePage> {
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
-                    child: Text(
+                    child: AutoSizeText(
                       _question['questionText'],
                       textAlign: TextAlign.center,
+                      maxLines: 2,
                       style: TextStyle(fontSize: 20.0),
                     ),
                   ),
@@ -495,7 +496,7 @@ class _GamePageState extends State<GamePage> {
         'Spiel beendet',
         textAlign: TextAlign.center,
       ),
-      content: Text('Erreichte Punktzahl: $_pointsCounter'),
+      content: Text('Richtige Antworten: $_rightAnswerCounter\n\nErreichte Punktzahl: $_pointsCounter'),
       actions: <Widget>[
         FlatButton(
           child: Text(
