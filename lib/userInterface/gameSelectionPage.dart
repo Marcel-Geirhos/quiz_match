@@ -122,7 +122,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
                     child: Padding(
                       padding: const EdgeInsets.only(right: 40.0),
                       child: Text(
-                        '${_userHighScores['classicHighscorePSP']}',
+                        _userHighScores == null ? '0' : '${_userHighScores['classicHighscorePSP']}',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 18.0),
                       ),
@@ -138,7 +138,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
                   Tooltip(
                     message: 'Richtige Antworten',
                     child: Text(
-                      '${_userHighScores['classicHighscoreRASP']}',
+                      _userHighScores == null ? '0' : '${_userHighScores['classicHighscoreRASP']}',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 18.0),
                     ),
@@ -199,7 +199,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
                     child: Padding(
                       padding: const EdgeInsets.only(right: 40.0),
                       child: Text(
-                        '${_userHighScores['questionHighscorePSP$numberQuestions']}',
+                        _userHighScores == null ? '0' : '${_userHighScores['questionHighscorePSP$numberQuestions']}',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 18.0),
                       ),
@@ -215,7 +215,7 @@ class _GameSelectionPageState extends State<GameSelectionPage> {
                   Tooltip(
                     message: 'Richtige Antworten',
                     child: Text(
-                      '${_userHighScores['questionHighscoreRASP$numberQuestions']}',
+                      _userHighScores == null ? '0' : '${_userHighScores['questionHighscoreRASP$numberQuestions']}',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 18.0),
                     ),
