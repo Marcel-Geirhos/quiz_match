@@ -9,9 +9,9 @@
   - Cloud Firestore
 - UI/UX Design
 
-<img src="https://github.com/Marcel-Geirhos/quiz_match/blob/master/android/app/src/main/res/feature_graphic_quiz_match.png">
+## Screens and Screenshots
 
-## Screens
+<img src="https://github.com/Marcel-Geirhos/quiz_match/blob/master/android/app/src/main/res/feature_graphic_quiz_match.png">
 
 <img src="https://github.com/Marcel-Geirhos/quiz_match/blob/master/android/app/src/main/res/register_quiz_match.jpg" width="300" height="600"> <img src="https://github.com/Marcel-Geirhos/quiz_match/blob/master/android/app/src/main/res/login_quiz_match.jpg" width="300" height="600">
 
