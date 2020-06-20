@@ -7,7 +7,7 @@
 - Firebase
   - E-mail and password Authentication
   - Cloud Firestore
-- UI/UX Design
+- UI / UX Design
 
 ## Screens and Screenshots
 
