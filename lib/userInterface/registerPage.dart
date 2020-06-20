@@ -215,7 +215,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   registerUser(BuildContext context) async {
     String errorMessage;
-    bool registerSuccessful = false;
     if (_registerFormKey.currentState.validate()) {
       _progressDialog.show();
       try {
@@ -223,7 +222,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 email: _email.text.toString().trim(), password: _password.text.toString().trim()))
             .user;
         createUserInCloudFirestore(user);
-        registerSuccessful = true;
       } catch (error) {
         switch (error.code) {
           case 'ERROR_EMAIL_ALREADY_IN_USE':
@@ -233,13 +231,6 @@ class _RegisterPageState extends State<RegisterPage> {
             errorMessage = 'Unbekannter Fehler ist aufgetreten. Bitte versuche es erneut.';
         }
         Scaffold.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
-      }
-      _progressDialog.hide();
-      if (registerSuccessful) {
-        setState(() {
-          Navigator.pushAndRemoveUntil(context,
-              MaterialPageRoute(builder: (BuildContext context) => GameSelectionPage()), ModalRoute.withName('/'));
-        });
       }
     }
   }
@@ -260,6 +251,11 @@ class _RegisterPageState extends State<RegisterPage> {
           'questionHighscorePSP5': 0,
           'questionHighscorePSP10': 0,
           'questionHighscorePSP15': 0,
+        });
+        _progressDialog.hide();
+        setState(() {
+          Navigator.pushAndRemoveUntil(context,
+              MaterialPageRoute(builder: (BuildContext context) => GameSelectionPage()), ModalRoute.withName('/'));
         });
       }
     } catch (error) {

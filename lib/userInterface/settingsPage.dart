@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:quiz_match/utils/systemSettings.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 import 'package:quiz_match/userInterface/loginPage.dart';
 import 'package:quiz_match/userInterface/registerPage.dart';
 
@@ -11,12 +12,23 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  final GlobalKey<FormState> _deleteAccountFormKey = GlobalKey<FormState>();
+  final TextEditingController _password = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  ProgressDialog _progressDialog;
 
   @override
   void initState() {
     super.initState();
     SystemSettings.allowOnlyPortraitOrientation();
+    _progressDialog = ProgressDialog(context);
+    _progressDialog.style(message: 'Account wird gelöscht...');
+  }
+
+  @override
+  void dispose() {
+    _password.dispose();
+    super.dispose();
   }
 
   @override
@@ -59,22 +71,22 @@ class _SettingsPageState extends State<SettingsPage> {
   /// TODO auslagern, da diese Funktion auch in gameSelectionPage vorkommt
   Future<bool> signOutDialog() async {
     return (await showDialog(
-      context: context,
-      builder: (context) => new AlertDialog(
-        title: Text('Ausloggen?'),
-        content: Text('Willst du dich wirklich ausloggen?'),
-        actions: <Widget>[
-          FlatButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Nein'),
+          context: context,
+          builder: (context) => new AlertDialog(
+            title: Text('Ausloggen?'),
+            content: Text('Willst du dich wirklich ausloggen?'),
+            actions: <Widget>[
+              FlatButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text('Nein'),
+              ),
+              FlatButton(
+                onPressed: () => signOut(),
+                child: Text('Ja'),
+              ),
+            ],
           ),
-          FlatButton(
-            onPressed: () => signOut(),
-            child: Text('Ja'),
-          ),
-        ],
-      ),
-    )) ??
+        )) ??
         false;
   }
 
@@ -87,31 +99,89 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<bool> deleteAccountDialog() async {
     return (await showDialog(
-      context: context,
-      builder: (context) => new AlertDialog(
-        title: Text('Account löschen?'),
-        content: Text('Willst du dich wirklich deinen Account löschen? Es werden alle Daten unwideruflich gelöscht und können nicht wiederhergestellt werden!'),
-        actions: <Widget>[
-          FlatButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Nein'),
+          context: context,
+          builder: (context) => new AlertDialog(
+            title: Text('Account löschen?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  child: Text(
+                    'Um die Löschung deines Accounts zu bestätigen musst du dein Passwort eingeben.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Form(
+                  key: _deleteAccountFormKey,
+                  child: TextFormField(
+                    controller: _password,
+                    maxLength: 30,
+                    obscureText: true,
+                    validator: validatePassword,
+                    decoration: InputDecoration(
+                      labelText: 'Passwort...',
+                      contentPadding: const EdgeInsets.all(0),
+                      isDense: true,
+                      prefixIcon: Icon(Icons.lock, size: 22.0),
+                      counterText: '',
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Text(
+                    'Es werden alle Accountdaten unwideruflich gelöscht und können nicht wiederhergestellt werden!',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              FlatButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text('Nein'),
+              ),
+              FlatButton(
+                onPressed: () => deleteAccount(),
+                child: Text('Ja'),
+              ),
+            ],
           ),
-          FlatButton(
-            onPressed: () => deleteAccount(),
-            child: Text('Ja'),
-          ),
-        ],
-      ),
-    )) ??
+        )) ??
         false;
   }
 
-  void deleteAccount() async {
-    FirebaseUser user = await _auth.currentUser();
-    await user.delete();
-    await Firestore.instance.collection('users').document(user.uid).delete();
-    await _auth.signOut();
-    Navigator.pushAndRemoveUntil(
-        context, MaterialPageRoute(builder: (BuildContext context) => RegisterPage()), ModalRoute.withName('/'));
+  String validatePassword(String password) {
+    int minLength = 6;
+    if (password.isEmpty) {
+      return 'Bitte Passwort eingeben.';
+    } else if (password.length < minLength) {
+      return 'Mindestens $minLength Zeichen benötigt.';
+    } else {
+      return null;
+    }
+  }
+
+  Future<bool> deleteAccount() async {
+    if (_deleteAccountFormKey.currentState.validate()) {
+      _progressDialog.show();
+      try {
+        FirebaseUser user = await _auth.currentUser();
+        AuthCredential credentials =
+        EmailAuthProvider.getCredential(email: user.email, password: _password.text.toString().trim());
+        AuthResult result = await user.reauthenticateWithCredential(credentials);
+        await Firestore.instance.collection('users').document(user.uid).delete();
+        await result.user.delete();
+        _progressDialog.hide();
+        Navigator.pushAndRemoveUntil(
+            context, MaterialPageRoute(builder: (BuildContext context) => RegisterPage()), ModalRoute.withName('/'));
+        return true;
+      } catch (e) {
+        print(e.toString());
+        _progressDialog.hide();
+        return false;
+      }
+    }
   }
 }
