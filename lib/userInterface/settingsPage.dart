@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:quiz_match/utils/systemSettings.dart';
 import 'package:quiz_match/userInterface/loginPage.dart';
+import 'package:quiz_match/userInterface/registerPage.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -31,11 +33,20 @@ class _SettingsPageState extends State<SettingsPage> {
           Center(
             child: Container(
               width: MediaQuery.of(context).size.width - 50,
+              child: RaisedButton(
+                child: Text('Logout'),
+                onPressed: () => signOutDialog(),
+              ),
+            ),
+          ),
+          Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width - 50,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 50.0),
+                padding: const EdgeInsets.only(top: 15.0, bottom: 30.0),
                 child: RaisedButton(
-                  child: Text('Logout'),
-                  onPressed: () => signOutDialog(),
+                  child: Text('Account löschen'),
+                  onPressed: () => deleteAccountDialog(),
                 ),
               ),
             ),
@@ -72,5 +83,35 @@ class _SettingsPageState extends State<SettingsPage> {
     await _auth.signOut();
     Navigator.pushAndRemoveUntil(
         context, MaterialPageRoute(builder: (BuildContext context) => LoginPage()), ModalRoute.withName('/'));
+  }
+
+  Future<bool> deleteAccountDialog() async {
+    return (await showDialog(
+      context: context,
+      builder: (context) => new AlertDialog(
+        title: Text('Account löschen?'),
+        content: Text('Willst du dich wirklich deinen Account löschen? Es werden alle Daten unwideruflich gelöscht und können nicht wiederhergestellt werden!'),
+        actions: <Widget>[
+          FlatButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Nein'),
+          ),
+          FlatButton(
+            onPressed: () => deleteAccount(),
+            child: Text('Ja'),
+          ),
+        ],
+      ),
+    )) ??
+        false;
+  }
+
+  void deleteAccount() async {
+    FirebaseUser user = await _auth.currentUser();
+    await user.delete();
+    await Firestore.instance.collection('users').document(user.uid).delete();
+    await _auth.signOut();
+    Navigator.pushAndRemoveUntil(
+        context, MaterialPageRoute(builder: (BuildContext context) => RegisterPage()), ModalRoute.withName('/'));
   }
 }

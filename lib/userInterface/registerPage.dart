@@ -248,7 +248,7 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final userData = await Firestore.instance.collection('users').document(user.uid).get();
       if (userData == null || !userData.exists) {
-        Firestore.instance.collection('users').document(user.uid).setData({
+        await Firestore.instance.collection('users').document(user.uid).setData({
           'email': _email.text.toString().trim(),
           'username': _username.text.toString().trim(),
           'coins': 0,
